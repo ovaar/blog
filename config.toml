@@ -3,6 +3,7 @@ title = "Ovaar - Blog"
 theme = "lyla"
 
 [Social]
+    linkedin = "https://www.linkedin.com/in/thomas-reynders-6bb57057/"
     github = "https://github.com/ovaar"
 
 [params]
