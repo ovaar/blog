@@ -3,10 +3,13 @@
 # If a command fails then the deploy stops
 set -e
 
+# Goto project root directory
+cd ..
+
 printf "\033[0;32mDeploying updates to GitHub...\033[0m\n"
 
 # Build the project.
-`hugo -t lyla`  # if using a theme, replace with `hugo -t <YOURTHEME>`
+docker-compose up blog  # if using a theme, replace with `hugo -t <YOURTHEME>`
 
 # Go To Public folder
 cd public
