@@ -1,0 +1,3 @@
+[submodule "themes/lyla"]
+	path = themes/lyla
+	url = https://github.com/embik/hugo-theme-lyla.git
