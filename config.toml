@@ -1,0 +1,13 @@
+baseURL = "https://ovaar.github.io/"
+title = "Ovaar - Blog"
+theme = "lyla"
+
+[Social]
+    github = "https://github.com/ovaar"
+
+[params]
+    Author = "Ovaar"
+    Description = "Software Engineering blog"
+
+[permalinks]
+    posts = "/:year/:month/:title/"
