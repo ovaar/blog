@@ -6,7 +6,7 @@ type = "post"
 
 ## [Linux] yocto interactive shell
 
-One of the reasons I have started this blog is to write about my best achievements. This post is about a feature request which I have implemented, at time of writing, about 2 years back. It always stuck with me because the project I was doing at the time was my first yocto experience. Topic has its own [BSP](https://github.com/topic-embedded-products/topic-platform) for FPGA boards on top of a Linux distribution. A custom board was specifically designed for a customor which would run our software that would interface with another custom low power embedded device.
+This post is about a feature request which I have implemented, at time of writing, about 2 years back. It always stuck with me because the project I was doing at the time was my first yocto experience. Topic has its own [BSP](https://github.com/topic-embedded-products/topic-platform) for FPGA boards on top of a Linux distribution. A custom board was specifically designed for a customor which would run our software that would interface with another custom low power embedded device.
 
 Due to an increasing demand of delivering production ready devices to our customer, delivering actual software features became more and more challenging. Making the devices production ready required some manual steps and was something we did in-house.
 
