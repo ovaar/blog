@@ -2,6 +2,8 @@ baseURL = "https://ovaar.github.io/"
 title = "Ovaar - Blog"
 theme = "lyla"
 
+googleAnalytics = "UA-173180646-1"
+
 [Social]
     linkedin = "https://www.linkedin.com/in/thomas-reynders-6bb57057/"
     github = "https://github.com/ovaar"
