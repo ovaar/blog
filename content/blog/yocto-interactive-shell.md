@@ -8,9 +8,15 @@ type = "post"
 
 One of the reasons I have started this blog is to write about my best achievements. This post is about a feature request which I have implemented, at time of writing, about 2 years back. It always stuck with me because the project I was doing at the time was my first yocto experience. Topic has its own [BSP](https://github.com/topic-embedded-products/topic-platform) for FPGA boards on top of a Linux distribution. A custom board was specifically designed for a customor which would run our software that would interface with another custom low power embedded device.
 
-Due to an increasing demand of production ready devices by our customer delivering actual software features became more and more challenging. Making the devices production ready was something we did in-house. Preparing each device required doing some manual actions and each device needed to be flashed using a Micro SD card. For example: the devices required a MAC address to be installed in the EEPROM and the yocto image to be flashed to NOR Flash using [swupdate](https://github.com/sbabic/swupdate). 
+Due to an increasing demand of delivering production ready devices to our customer, delivering actual software features became more and more challenging. Making the devices production ready required some manual steps and was something we did in-house.
 
-Back then I had an idea to speed up the process, it was to create a seperate yocto image that would bypass the getty login prompt to run an interactive script. This script could flash, erase flash, write to EEPROM, erase the EEPROM and would ask the user to which boot partition to write the swupdate package.
+1. Create a bootable SD card with a yocto image containing an [swupdate](https://github.com/sbabic/swupdate) package
+2. Erase NOR-flash
+3. Run swupdate and select the right boot partition 
+4. Erase EEPROM
+5. Write MAC address to EEPROM
+
+This turned out to be error sensitive process. So I decided to create a script which restricts the user input and does validation on the MAC address. Also it could flash the swupdate package, erase flash, write to EEPROM, erase the EEPROM and would prompt the user to select the boot partition to write the swupdate package to. Now I had the script, but still I needed to enter user credentials every time I booted from the SD-card. Would it not be great to bypass the getty login prompt and then run the script interactively 🤓!
 
 Enough talk, lets dive in....
 
