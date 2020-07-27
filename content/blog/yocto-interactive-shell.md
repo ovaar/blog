@@ -1,6 +1,6 @@
 +++
 date = "2020-07-20"
-title = "Yocto interactive shell"
+title = "[Linux] Yocto interactive shell"
 type = "post"
 +++
 
@@ -12,7 +12,7 @@ Due to an increasing demand of delivering production ready devices to our custom
 
 1. Create a bootable SD card with a yocto image containing an [swupdate](https://github.com/sbabic/swupdate) package
 2. Erase NOR-flash
-3. Run swupdate and select the right boot partition 
+3. Run swupdate and select the right boot partition
 4. Erase EEPROM
 5. Write MAC address to EEPROM
 
@@ -47,8 +47,6 @@ SendSIGHUP=yes
 WantedBy=getty.target
 ```
 
-
-
 `interactive.bb`
 
 ```py
@@ -69,8 +67,6 @@ disable_login_prompt () {
 
 ROOTFS_POSTPROCESS_COMMAND += "disable_login_prompt;"
 ```
-
-
 
 Next create a systemd service which runs after getty has started which to execute the interactive script.
 
