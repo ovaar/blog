@@ -3,6 +3,8 @@ date = "2020-07-28"
 publishDate = "2020-07-28"
 title = "[Docker] Setup docker credential-store"
 type = "post"
+categories = ["Development", "Devops"]
+tags = ["Development", "Devops", "Docker"]
 +++
 
 ## [Docker] Setup docker credential-store

@@ -2,6 +2,8 @@
 date = "2020-07-27"
 title = "[Linux] Setting MAC address"
 type = "post"
+categories = ["Development", "Linux"]
+tags = ["Development", "Linux", "shell"]
 +++
 
 ## [Linux] Setting MAC address

@@ -2,6 +2,8 @@
 date = "2020-07-20"
 title = "[Linux] Yocto interactive shell"
 type = "post"
+categories = ["Development", "Linux"]
+tags = ["Development", "Linux", "Yocto", "shell"]
 +++
 
 ## [Linux] yocto interactive shell
