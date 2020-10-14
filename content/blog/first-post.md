@@ -6,8 +6,6 @@ categories = ["me"]
 tags = ["me"]
 +++
 
-## Very first blog post
-
 After a long time thinking whether I would or should start a blog, I finally have! As a dyslectic software engineer this is exciting for me because writing and reading is not easy for me. (Spoiler) Some very critical readers will find flaws in my writing, I am sure about that 😇.
 
 ![jim carry typing](https://media.giphy.com/media/13GIgrGdslD9oQ/giphy.gif)

@@ -1,12 +1,10 @@
 +++
 date = "2020-07-20"
-title = "[Linux] Yocto interactive shell"
+title = "How to create an interactive Yocto shell"
 type = "post"
 categories = ["Development", "Linux"]
 tags = ["Development", "Linux", "Yocto", "shell"]
 +++
-
-## [Linux] yocto interactive shell
 
 This post is about a feature request which I have implemented, at time of writing, about 2 years back. It always stuck with me because the project I was doing at the time was my first yocto experience. Topic has its own [BSP](https://github.com/topic-embedded-products/topic-platform) for FPGA boards on top of a Linux distribution. A custom board was specifically designed for a customor which would run our software that would interface with another custom low power embedded device.
 

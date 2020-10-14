@@ -1,14 +1,12 @@
 +++
 date = "2020-07-27"
-title = "[Linux] Setting MAC address"
+title = "How to set Linux MAC address"
 type = "post"
 categories = ["Development", "Linux"]
 tags = ["Development", "Linux", "shell"]
 +++
 
-## [Linux] Setting MAC address
-
-[Last post](/blog/yocto-interactive-shell/) I wrote about a embedded device running Linux where a MAC address is stored in the EEPROM. The first six bytes are reserved for the MAC address which (ideally) only should be written once.
+[Last post](/blog/how-to-create-an-interactive-yocto-shell/) I wrote about a embedded device running Linux where a MAC address is stored in the EEPROM. The first six bytes are reserved for the MAC address which (ideally) only should be written once.
 
 To apply the MAC address the numbers need to be hexadecimal formatted and separated with a colon(`:`) symbol. It is possible to dynamically change the MAC address of Ethernet, beware that you need to be `root` and that the ethernet interface is not up.
 

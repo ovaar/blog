@@ -1,12 +1,10 @@
 +++
 date = "2020-09-14"
-title = "[Python] Reactive testing with Gherkin, ReactiveX and asyncio"
+title = "Reactive testing with Gherkin, ReactiveX and asyncio"
 type = "post"
 categories = ["Development", "Python"]
 tags = ["Development", "Testing", "ReactiveX", "async", "Gherkin"]
 +++
-
-## [Python] Reactive testing with Gherkin, ReactiveX and asyncio
 
 Have you ever written integration test with asynchronous behavior? I have, and it has always been a struggle... CI/CD pipelines which regularly fail because of some timeout. Then, "a wild project manager appears!", and starts asking questions why investigating takes so long...
 
