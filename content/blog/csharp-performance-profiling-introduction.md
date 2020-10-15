@@ -120,7 +120,7 @@ Intel VTune Profiler offers great insight in the Microarchitecture bottlenecks o
 
 #### Threading Efficiency
 
-Each process has its on resources in order to execute a program such as; virtual address space, executable code, open handles to system objects, a security context, a unique process identifier, environment variables, a priority class, minimum and maximum working set sizes, and at least one thread of execution. The first thread is often called _primary thread_ or _main thread_.
+Each process has its own resources in order to execute a program such as; virtual address space, executable code, open handles to system objects, a security context, a unique process identifier, environment variables, a priority class, minimum and maximum working set sizes, and at least one thread of execution. The first thread is often called _primary thread_ or _main thread_.
 
 A thread, linked to a process, can be scheduled for execution. Each thread shares the virtual address space and system resources of a process. In addition, each thread maintains exception handlers, a scheduling priority, thread local storage, a unique thread identifier, and a set of structures the system will use to save the thread context until it is scheduled. The thread context includes the thread's set of machine registers, the kernel stack, a thread environment block, and a user stack in the address space of the thread's process. Threads can also have their own security context, which can be used for impersonating clients.
 
