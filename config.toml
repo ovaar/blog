@@ -4,6 +4,7 @@ theme = "lyla"
 
 googleAnalytics = "UA-173180646-1"
 enableRobotsTXT = true
+
 [taxonomies]
    tag = "tags"
    category = "categories"
