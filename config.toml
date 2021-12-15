@@ -1,5 +1,5 @@
 baseURL = "https://ovaar.github.io/"
-title = "Ovaar - Blog"
+title = "Ovaar - Software engineering blog"
 theme = "lyla"
 
 googleAnalytics = "UA-173180646-1"
@@ -19,3 +19,16 @@ enableRobotsTXT = true
 
 [permalinks]
     posts = "/:year/:month/:title/"
+
+[imaging]
+    resampleFilter = "box"
+    quality = 75
+    hint = "photo"
+    anchor = "smart"
+    bgColor = "#ffffff"
+
+[imaging.exif]
+    includeFields = ""
+    excludeFields = ""
+    disableDate = false
+    disableLatLong = false
