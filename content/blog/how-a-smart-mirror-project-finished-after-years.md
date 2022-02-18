@@ -7,39 +7,53 @@ categories = ["Development"]
 tags = ["Development", "DIY"]
 +++
 
-Early 2019 I got inspired by the [Magic Mirror](https://magicmirror.builders/) project. I thought it was so cool that I just had to build one for myself, from scratch. It was such a great oportunity to learn about new things, so I build the mirror and called it the Mirrorm8 project. I never wrote about it until now.
+## Introduction
 
-Like with many, our inspiration and creativity gives birth to a great amount of other ideas. But, as we slowly come back to earth we realize that with the little time we have there is only so little we can do. Display the weather forecast, upcoming agenda items, voice control, gesture control, facial recognition in order to dynammically switch content per user, realtime traffic- and crypto and stocks information ... The list is virtually endless. 
+Early 2019 I noticed the [Magic Mirror](https://magicmirror.builders/) project. To me the way of how woodworking and technology come together really got me. I just had to build one from scratch, ofcourse. It was a great opportunity for me to build something physical and learn a few things about some fancy new JavaScript frontend framework. I decided to call it the [mirrorm8](https://github.com/ovaar/mirrorm8) project. I never wrote about it until now.
 
-My first thoughts were to put the mirror in the bathroom, because that's where you see the device every day. In the moring it could give me all the information for that day. That way I know if I can take my bike to go to work or on a rainy day whether there would be allot of traffic. Me and my girlfriend both value our privacy and a few of my wild ideas required one way of imaging. Bathroom + camera don't really match well. So, a few ideas were taken off my list, but there was this one particullar item which I really wanted to have. I wanted to have some form of motion or proximity sensing, because I didn't want the display to be on the entire time. Putting a camera in was of the table and using an infrared (IR) sensor wouldn't work, since the sensor would be placed behind the glass and most IR waves would be blocked by the glass. This would leave me with Bluetooth (BLE) proximity, an other form of light like lasers or some form of capturing sound.
+Like with many ideas, our inspiration and creativity give birth to others. But as we slowly come back to earth, we realize that with the little time we have there is only so little we can do. Display the weather forecast, upcoming agenda items, voice control, gesture control, facial recognition in order to dynamically switch content per user, real-time traffic- and crypto and stocks ...
 
-The mirrors' frame is build out of wood and the monitor would be leveled with the wooden frame. This allowed the glass to cover the entire front, to act as a mirror. I decided to go for a spy mirror film instead of acrilic class since it was much cheaper. The spy film partially reflects light while the light emitted by the monitor would still be visible. A Raspberry Pi is mounted at the back of the frame and Mirrorm8 is deployed on it. I used [DietPi](https://dietpi.com/) as an Linux image, which allowed me to easily install dependencies, do backups and receive updates.
+## Research fase
 
-While shopping at a hardware store I found these thin metal brackets, interlocking connectors, that allow the whole thing to be blindly mounted on the wall. Normally, such brackets are used hang mirrors on the wall. Then I bought an old second hand 28" TFT monitor that I completely stripped of its housing. After preparing drawings and double-checking the measurments I got help from a friendly neighbour, who's a very skilled woodworker, with sawing the wooden fram. I cleaned the wood and used [Polyvine verniswas](https://www.polyvine.be/) to give it those dark looks.
+My first thoughts were to put the mirror in the bathroom, because this is where I would see the device every day. In the morning it could give me all the information for the day. That way I know if I can take my bike to work or on a rainy day the traffic information. My girlfriend and I both value our privacy and a few ideas required image processing. A bathroom and a camera don't go well for us, so a few ideas needed to be taken off the list. Except for one particular idea, which I really wanted to implement. I wanted to have some form of motion or proximity sensing, since I only want the mirror to be on when standing in front of it. Using a camera for motion detection was of the table and infrared (IR) wouldn't work, since most IR waves would be blocked by the glass mirror. Bluetooth (BLE) looked like a good alternative, but this required the users to always bring their smartphone close to the mirror. Perhaps another form or sound? While looking for solutions I stumbled upon the [RCWL-0516](https://github.com/jdesbonnet/RCWL-0516), a doppler radar microwave motion sensor capable of detecting proximity within approximately a range of 5 meters distance.
 
-To reduce the project scope I decided to include only the following features: 
+I imagined the mirrors' frame to be build out of wood where the display would sink into the frame. This allows the glass to cover the entire front acting as a mirror. For the semi-transparent mirror look I choose to use a spy-mirror film over acrylic class, since it was much cheaper. A Raspberry Pi mounted at the back of the frame would run Mirrorm8 and control the display. 
+
+# Development phase
+
+After preparing drawings and double-checking the measurements I got help from a friendly neighbour, who had all the professional tools, to cut wood. I soft grinded the wood for a smooth finish and applied [Polyvine verniswas](https://www.polyvine.be/) to darken the wood, which gives the old-wood-looks.
+
+While I was shopping at a hardware store I found these thin metal interlocking connectors, which are great to mount the mirror close on to the wall. Normally, such brackets are used to mount regular mirrors on the wall. To be able to use them for my mirror I drilled some holes through the brackets and mounted them at the back of the wooden frame with some philips screws.
+
+23 April 2019 I started and developing the frontend using TypeScript and [Nuxt.js](https://nuxtjs.org/), a based Vue.js frontend framework. 
+Using [DietPi](https://dietpi.com/) as the Linux image allowed me to easily install dependencies, do backups and receive updates with minimal effort.
+
+To reduce the software project scope, I decided to include only the following features: 
 
 * Display date and time
 * Display the weather forecast
 * Display upcoming Google Calandar items
 * Dynamically turn on and off the monitor.
 
-While researching to solve the proximity sensor problem I found the [RCWL-0516](https://github.com/jdesbonnet/RCWL-0516). A doppler radar microwave motion sensor capable of detecting proximity while being compatible with the Raspberry Pi. 23 April 2019 I started and developing the frontend using TypeScript and [Nuxt.js](https://nuxtjs.org/), a based Vue.js frontend framework.
+At the time Nuxt.js just recently introduced support for TypeScript, but it was a lacking documentation, examples and a stable API. It was a recipe for disaster really, but that wouldn't stop me! The problem I faced at the time was that I wanted to integrate Socket.io with Nuxt.js in order to receive realtime updates from the backend to the frontend, but Nuxt didn't allow me to extend the expressjs server middleware for an unknown reason. After spending countless hours, I decided to put the project on ice for a little while until the Nuxt.js TypeScript was more stable.
 
-At the time Nuxt.js just recently introduced support for TypeScript, but there was a lack of documentation, examples and changing APIs. It was a recipe for disaster, but that wouldn't stop my enthousiasm. After spending countless days and nights trying integrate Socket.io. Nuxt.js spins up its own server using `expressjs`, but I wanted to use or extend my own middleware. Therefore, I needed to overwrite or extend the express server, but I never figured out what was wrong at the time. Because of this I decided to put the project on ice for a little while until Nuxt.js TypeScript support was more stable. In August 2020 in my summer holiday and with the release of `"@nuxt/typescript-runtime": "1.0.0"`, I succesfully build the software project with the desired `serverMiddleware` [b019c94](https://github.com/ovaar/mirrorm8/commit/b019c94de2d44afebc33e372c523a3f1f6592fdd). Finally, I finished with automatically updating the weather forecast, upcoming Google Calander items, date time and turning on/off the display dynamically using the RCWL-0516 proximity sensor.
+Just around the summer of August 2020, in my holidays, Nuxt.js released a stable version of @nuxt/typescript-runtime v1.0.0, allowing me to succesfully build the Mirrorm8 project with the desired serverMiddleware [b019c94](https://github.com/ovaar/mirrorm8/commit/b019c94de2d44afebc33e372c523a3f1f6592fdd). Finally! I rapidly finished automatically updating the weather forecast, upcoming Google Calendar items, date time and turning on/off the display dynamically using the RCWL-0516 proximity sensor afterwards.
 
-After being done with most the development I started testing. Because mirrorm8 uses native dependencies it needs to be build on the target, which was inconvenient because of the long build time. DietPi automatically starts the mirrorm8 service and boots Chromium with the server url in kiosk mode. Unfortunately, I found out that Google OAuth2 is not supported by Google in the open-source [Chromium](https://www.chromium.org/) browser. The fix was to replace Google OAuth2 with [Google API key](https://docs.simplecalendar.io/google-api-key/) instead.
+# Validation phase
 
-{{< img src="/img/IMG_20190609_171025.jpg" alt="Mirrorm8 - Wooden Frame Pieces" >}}
-{{< img src="/img/IMG_20190610_113928.jpg" alt="Mirrorm8 - Wooden Frame Assembled Front" >}}
-{{< img src="/img/IMG_20200423_225011.jpg" alt="Mirrorm8 - Wooden Frame Assembled Back" >}}
-{{< img src="/img/IMG-20200423-WA0021.jpg" alt="Mirrorm8 - Spy film Glas" >}}
+Most of the developement could be done on a regular working station, but because of the Proximity sensor few functions needed to be tested on the hardware. Because mirrorm8 uses native dependencies it was easiest to be build the project on the target itself. The iterations were slow, because each time building the project took about 15 minutes. Luckly all of these steps I automated. At boot DietPi automatically starts the mirrorm8 systemd service and loads the URL with Chromium in kiosk mode. Unfortunately, my calendar items were not showing when running Mirrorm8 on the Raspberri Pi. Though, this worked just find on my work station. It turns out that Google OAuth2 is unsupported in the open-source [Chromium](https://www.chromium.org/) browser. To fix it I replaced Google OAuth2 with a [Google API key](https://docs.simplecalendar.io/google-api-key/) instead.
+
+#### Gallery
+
+{{< img src="/img/IMG_20190609_171025.jpg" alt="Mirrorm8 - Wooden frame pieces" >}}
+{{< img src="/img/IMG_20190610_113928.jpg" alt="Mirrorm8 - Wooden frame assembled front" >}}
+{{< img src="/img/IMG_20200423_225011.jpg" alt="Mirrorm8 - Wooden frame assembled back" >}}
+{{< img src="/img/IMG-20200423-WA0021.jpg" alt="Mirrorm8 - Spy film glas" >}}
 {{< img src="/img/IMG_20200720_190254.jpg" alt="Mirrorm8 - Chromium restore pages" >}}
+{{< img src="/img/IMG_20211228_141034.jpg" alt="Mirrorm8 - Fully assembled " >}}
 
-Up until today the mirror has been mounted up against the wall in the hallway.
+#### Bill of material
 
-
-Bill of material:
 
 | Items                     |    Cost |
 | ------------------------- | ------: |
@@ -55,13 +69,16 @@ Bill of material:
 | 'Blind' mirror wall mount |  €12,00 |
 | Total                     | €202,61 |
 
-The project is open source and is hosted on [Github](https://github.com/ovaar/mirrorm8).
 
-Lessons learned:
+## Reflection
 
-- I learned that choosing new technology is riskfull.
-- I learned about Nuxt.js with TypeScript.
-- I learned about Vuex-class, which is great for seperation of concerns.
-- I leanred that Google OAuth2 is not allowed on the open-source Chromium browser.
-- I learned that applying mirror foil is hard, because it leaves wrinkles. I recommend acrillic glass.
-- I learned how to oil wood.
+* Applying mirror foil is hard, because it leaves wrinkles. I recommend acrylic glass.
+* I learned how to oil wood.
+* Choosing new technology is risk full.
+* Nuxt.js with TypeScript is great for productivity.
+* vuex-class is great for separation of concerns.
+* Google does not allow OAuth2 authentication from the open-source Chromium browser.
+
+Say, I would need to do it all over I would separate the server-side logic from the client. For example, I would rather use the MQTT protocol to notify Mirrorm8, as a client, to receive messages and update the frontend with new data automatically.
+
+Looking back, I really enjoyed doing this project and I hope you also liked to read about my journey.
