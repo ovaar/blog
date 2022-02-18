@@ -32,3 +32,8 @@ enableRobotsTXT = true
     excludeFields = ""
     disableDate = false
     disableLatLong = false
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
