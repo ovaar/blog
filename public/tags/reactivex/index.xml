@@ -1,0 +1,201 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>ReactiveX on Ovaar - Software engineering blog</title>
+    <link>https://ovaar.github.io/tags/reactivex/</link>
+    <description>Recent content in ReactiveX on Ovaar - Software engineering blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Mon, 14 Sep 2020 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://ovaar.github.io/tags/reactivex/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>Reactive testing with Gherkin, ReactiveX and asyncio</title>
+      <link>https://ovaar.github.io/blog/reactive-testing-with-gherkin-reactivex-and-asyncio/</link>
+      <pubDate>Mon, 14 Sep 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://ovaar.github.io/blog/reactive-testing-with-gherkin-reactivex-and-asyncio/</guid>
+      <description>&lt;p&gt;Have you ever written integration test with asynchronous behavior? I have, and it has always been a struggle&amp;hellip; CI/CD pipelines which regularly fail because of some timeout. Then, &amp;ldquo;a wild project manager appears!&amp;rdquo;, and starts asking questions why investigating takes so long&amp;hellip;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Solution: The timeout is increased to quickly solve the issue, when usually the failure is caused by regression.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;There must be some more elegant way to assert or await asynchronous calls in Behavior Driven Development (BDD) steps.&lt;/p&gt;
+&lt;p&gt;I am excited, enjoy what&amp;rsquo;s coming next! I developed a more comfortable way to add asynchronous assertions in integration tests without adding &lt;code&gt;time.sleep(n)&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;TLDR;
+This post is about practical use of combining RxPy, pytest, Gherkin, asyncio with automated testing using Python and not an introduction of the previously described libraries. Regardless of using Python I believe this test strategy can be reused with any other programming language supported by ReactiveX. The application sources can be found on &lt;a href=&#34;https://github.com/ovaar/reactive-testing&#34;&gt;Github&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s break it down, but before I do I would like to set the scene for the demo application with the following use case.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Use case: I have a central lighting system where lights can connect to and as a user I want to be able to turn on and off the lights.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;To only focus on the testing part, we will abstract the lighting hardware using a simulator and assume the lights are able to communicate via the MQTT protocol. Let&amp;rsquo;s begin with looking at how the Gherkin test Feature is described which will be used in order to execute the test.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-gherkin&#34; data-lang=&#34;gherkin&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# lighting\integration_tests\tests\features\lighting.feature&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;Feature:&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; The lights must be able to be turned on and off
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;Scenario:&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; The lights are controlled
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;        Given &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;I have a light with the id &lt;/span&gt;&amp;lt;light_id&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;And &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;the light &lt;/span&gt;&amp;lt;light_id&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; is turned &lt;/span&gt;&amp;lt;light_begin_state&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;And &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;I expect the final state of light &lt;/span&gt;&amp;lt;light_id&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; to be &lt;/span&gt;&amp;lt;light_final_state&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;When &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;the lights are connected
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;Then &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;I use &lt;/span&gt;&amp;lt;light_function&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; to control the lights
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;And &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;I await the result
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;Examples:&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; Vertical&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;            |&lt;/span&gt; light_id&lt;span style=&#34;color:#66d9ef&#34;&gt;          |&lt;/span&gt; lightbulb-1&lt;span style=&#34;color:#66d9ef&#34;&gt; |&lt;/span&gt; lightbulb-2&lt;span style=&#34;color:#66d9ef&#34;&gt; |&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;            |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; light_begin_state&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt; |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; OFF&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;         |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; ON&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;          |&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;            |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; light_function&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;    |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; on&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;          |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; off&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;         |&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;            |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; light_final_state&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt; |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; ON&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;          |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; OFF&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;         |
+&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The test consists of three stage. In some way it like a Unit Test it uses Arrange / Act / Assert (AAA). In the first stage an object is build containing the initial stage for the simulator as well as setting up the the ReactiveX Observables in order to receive new states via a Mqtt Client. The ReactiveX Observables you could compare to adding a &lt;code&gt;spy&lt;/code&gt; to a method in order to check if it was called. This must be done before executing the test so that we will not miss any events.&lt;/p&gt;
+&lt;p&gt;The second stage adds Lightbulb Simulators to the &lt;code&gt;TestContext&lt;/code&gt; and connects them to the MQTT broker. The simulator publishes the topic &lt;code&gt;lights/connect/$lightId&lt;/code&gt; to register itself with the &lt;code&gt;core&lt;/code&gt; module. Then the connected lights can be controlled by sending an MQTT message to topic &lt;code&gt;lights/function/on&lt;/code&gt; or &lt;code&gt;lights/function/off&lt;/code&gt;. The &lt;code&gt;core&lt;/code&gt; will publish an individual topic for each simulated Lightbulb. Below you see the &lt;code&gt;Lightbulb&lt;/code&gt; data holder class. In order to understand the last BDD step &lt;code&gt;And I await the result&lt;/code&gt; I have to first explain about how &lt;code&gt;rx.subject&lt;/code&gt; works.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# lighting\integration_tests\tests\data.py&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; typing &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; Dict, Optional
+&lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; rx.subject &lt;span style=&#34;color:#66d9ef&#34;&gt;as&lt;/span&gt; RxSubject
+
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Lightbulb&lt;/span&gt;(object):
+    uuid: str
+    state: Optional[str] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;
+    light_state: RxSubject&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;Subject
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; __init__(self, uuid: str):
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;uuid &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; uuid
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;light_state &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; RxSubject&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;Subject()
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;complete&lt;/span&gt;(self):
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;light_state&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;on_completed()
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The class &lt;code&gt;rx.Subject&lt;/code&gt; inherits from &lt;code&gt;rx.core.Observable&lt;/code&gt; and &lt;code&gt;rx.core.Observer&lt;/code&gt;. The class &lt;code&gt;rx.Subject&lt;/code&gt; allows you to push data into the Rx Operators using the &lt;code&gt;rx.core.Observable&lt;/code&gt; interface. When a new state is received via the topic: &lt;code&gt;lights/{lightbulbId/state&lt;/code&gt;, then the &lt;code&gt;light_state.on_next(...)&lt;/code&gt; is called which pipes the data to the &lt;code&gt;rx.operators&lt;/code&gt;. ReactiveX operators are basically predicate functions which will evaluate the observable state with every element added to the sequence. I use &lt;a href=&#34;http://reactivex.io/documentation/operators/takewhile.html&#34;&gt;rx.operators.take_while&lt;/a&gt; to evaluate if the state of the lightbulb equals the expected &lt;code&gt;light_final_state&lt;/code&gt;. The &lt;code&gt;take_while&lt;/code&gt; Operator will automatically call on_complete if predicate function returns &lt;code&gt;False&lt;/code&gt;.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# lighting\integration_tests\tests\steps\lights.py&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; rx.operators &lt;span style=&#34;color:#66d9ef&#34;&gt;as&lt;/span&gt; RxOp
+&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; rx &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; Observable &lt;span style=&#34;color:#66d9ef&#34;&gt;as&lt;/span&gt; RxObservable
+&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; rx.scheduler.eventloop &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; AsyncIOScheduler
+
+&lt;span style=&#34;color:#a6e22e&#34;&gt;@given&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;I expect the final state of light &amp;lt;light_id&amp;gt; to be &amp;lt;light_final_state&amp;gt;&amp;#39;&lt;/span&gt;)
+&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;light_state_equals&lt;/span&gt;(light_id: str,
+                       light_final_state: str,
+                       test_context: Data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;TestContext,
+                       loop: asyncio&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;AbstractEventLoop,
+                       awaitables: List[RxObservable]):
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;assert&lt;/span&gt; isinstance(light_id, str)
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;assert&lt;/span&gt; isinstance(light_final_state, str)
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;take_while_state&lt;/span&gt;(payload: Structs&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;s_lights_state) &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; bool:
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; payload&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;newState &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; light_final_state
+
+    timeout_sec &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Get the lightbulb by id from the test context fixture&lt;/span&gt;
+    lightbulb: Data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;Lightbulb &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; test_context&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;lightbulbs[light_id]
+
+	&lt;span style=&#34;color:#75715e&#34;&gt;# Rx .pipe returns a new observable&lt;/span&gt;
+    observable: RxObservable &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; lightbulb&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;light_state&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;pipe(
+    	&lt;span style=&#34;color:#75715e&#34;&gt;# Add a default timeout for the test to fail if no data is received&lt;/span&gt;
+        RxOp&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;timeout(timeout_sec),
+        &lt;span style=&#34;color:#75715e&#34;&gt;# Add the AsyncIOScheduler to be able to asynchronously re-evaluate&lt;/span&gt;
+    	&lt;span style=&#34;color:#75715e&#34;&gt;# the state of the RxObserable for changes&lt;/span&gt;
+        RxOp&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;observe_on(scheduler&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;AsyncIOScheduler(loop)),
+        &lt;span style=&#34;color:#75715e&#34;&gt;# Add data to the RxObservable sequence while the predicate function&lt;/span&gt;
+    	&lt;span style=&#34;color:#75715e&#34;&gt;# returns True. If it returns False the RxObservable is automatically&lt;/span&gt;
+    	&lt;span style=&#34;color:#75715e&#34;&gt;# completed and it includes the last result.&lt;/span&gt;
+        RxOp&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;take_while(take_while_state, inclusive&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;True&lt;/span&gt;),
+    )
+
+    observable&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;subscribe(
+        on_next&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;lambda&lt;/span&gt; i: print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;on_next: &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;i&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;),
+        on_error&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;lambda&lt;/span&gt; e: print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;on_error: &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;e&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;),
+        on_completed&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;lambda&lt;/span&gt;: print(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;on_completed&amp;#34;&lt;/span&gt;),
+        scheduler&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;AsyncIOScheduler(loop)
+    )
+
+    awaitables&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;append(observable)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Finally, the last step &lt;code&gt;And I await the result&lt;/code&gt; from the file &lt;code&gt;lighting.feature&lt;/code&gt; uses Asyncio to asynchronously await the ReactiveX Observables which were added to the &lt;code&gt;awaitables&lt;/code&gt; list. The &lt;a href=&#34;https://docs.python.org/3/library/asyncio-task.html#asyncio.gather&#34;&gt;asyncio.gather&lt;/a&gt; function will await for all results to be completed. Wrapping the &lt;code&gt;asyncio.gather&lt;/code&gt; in a &lt;code&gt;main&lt;/code&gt; function and executing it on the asyncio event loop using &lt;code&gt;loop.run_until_complete(main())&lt;/code&gt; will block until all have been completed successfully or an exception is thrown.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# lighting\integration_tests\tests\steps\lights.py&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;@then&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;I await the result&amp;#39;&lt;/span&gt;)
+&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;await_the_result&lt;/span&gt;(awaitables: List[RxObservable], loop: asyncio&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;AbstractEventLoop):
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; len(awaitables) &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;:
+        print(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Nothing to await, continuing... &amp;#39;&lt;/span&gt;)
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt;
+
+    print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Awaiting tasks, count=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;len(awaitables)&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;)
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;():
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; asyncio&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;gather(&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;awaitables)
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;try&lt;/span&gt;:
+        print(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;start: run_until_complete&amp;#39;&lt;/span&gt;)
+        loop&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;run_until_complete(main())
+        awaitables&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;clear()
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;except&lt;/span&gt;:
+        awaitables&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;clear()
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;raise&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;That is all! I hope I inspired you or gave you some insight in how to approach asynchronous assertions in testing software. For the ones who are curious about the test output, have a look below.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;lighting-integration-tests_1  | ============================= test session starts ==============================
+lighting-integration-tests_1  | platform linux -- Python 3.8.2, pytest-6.0.1, py-1.9.0, pluggy-0.13.1 -- /usr/bin/python3
+lighting-integration-tests_1  | cachedir: .pytest_cache
+lighting-integration-tests_1  | rootdir: /lighting/integration_tests
+lighting-integration-tests_1  | plugins: bdd-3.3.0
+lighting-integration-tests_1  | collecting ... collected 2 items
+lighting-integration-tests_1  |
+lighting-integration-tests_1  | tests/main.py::test_turn_on_the_lights[lightbulb-1-OFF-on-ON] pytest::before &amp;lt;Function test_turn_on_the_lights[lightbulb-1-OFF-on-ON]&amp;gt;
+lighting-integration-tests_1  | Scenario::before: The lights are controlled
+lighting-integration-tests_1  | create: loop
+lighting-integration-tests_1  | create: awaitables
+lighting-integration-tests_1  | PASSED Step: I have a light with the id &amp;lt;light_id&amp;gt;
+lighting-integration-tests_1  | PASSED Step: the light &amp;lt;light_id&amp;gt; is turned &amp;lt;light_begin_state&amp;gt;ReactiveListener::on_connect Connected with result code 0
+lighting-integration-tests_1  |
+lighting-integration-tests_1  | PASSED Step: I expect the final state of light &amp;lt;light_id&amp;gt; to be &amp;lt;light_final_state&amp;gt;
+lighting-integration-tests_1  | create: simulator
+lighting-integration-tests_1  | LightbulbSimulator::connect_as lightbulb-1 to localhost:1883
+lighting-integration-tests_1  | LightbulbSimulator::on_connect Lightbulb=lightbulb-1 connected
+lighting-integration-tests_1  | LightbulbSimulator::on_message topic=lights/lightbulb-1/state/get payload=b&#39;&#39;
+lighting-integration-tests_1  | LightbulbSimulator::on_message public topic=lights/lightbulb-1/state payload=s_lights_state(newState=&#39;OFF&#39;)
+lighting-integration-tests_1  | ReactiveListener::on_message topic=lights/lightbulb-1/state payload=b&#39;{&amp;quot;newState&amp;quot;: &amp;quot;OFF&amp;quot;}&#39;
+lighting-integration-tests_1  | on_next: s_lights_state(newState=&#39;OFF&#39;)
+lighting-integration-tests_1  | PASSED Step: the lights are connected
+lighting-integration-tests_1  | PASSED Step: I use &amp;lt;light_function&amp;gt; to control the lights
+lighting-integration-tests_1  | Awaiting tasks, count=1
+lighting-integration-tests_1  | start: run_until_complete
+lighting-integration-tests_1  | LightbulbSimulator::on_message topic=lights/lightbulb-1/function/on payload=b&#39;&#39;
+lighting-integration-tests_1  | LightbulbSimulator::on_message public topic=lights/lightbulb-1/state payload=s_lights_state(newState=&#39;ON&#39;)
+lighting-integration-tests_1  | ReactiveListener::on_message topic=lights/lightbulb-1/state payload=b&#39;{&amp;quot;newState&amp;quot;: &amp;quot;ON&amp;quot;}&#39;
+lighting-integration-tests_1  | on_next: s_lights_state(newState=&#39;ON&#39;)
+lighting-integration-tests_1  | on_completed
+lighting-integration-tests_1  | PASSED Step: I await the result
+lighting-integration-tests_1  | PASSEDpytest::after &amp;lt;Function test_turn_on_the_lights[lightbulb-1-OFF-on-ON]&amp;gt;
+lighting-integration-tests_1  | after: awaitables
+lighting-integration-tests_1  |
+lighting-integration-tests_1  | tests/main.py::test_turn_on_the_lights[lightbulb-2-ON-off-OFF] pytest::before &amp;lt;Function test_turn_on_the_lights[lightbulb-2-ON-off-OFF]&amp;gt;
+lighting-integration-tests_1  | Scenario::before: The lights are controlled
+lighting-integration-tests_1  | create: awaitables
+lighting-integration-tests_1  | PASSED Step: I have a light with the id &amp;lt;light_id&amp;gt;
+lighting-integration-tests_1  | PASSED Step: the light &amp;lt;light_id&amp;gt; is turned &amp;lt;light_begin_state&amp;gt;
+lighting-integration-tests_1  | PASSED Step: I expect the final state of light &amp;lt;light_id&amp;gt; to be &amp;lt;light_final_state&amp;gt;
+lighting-integration-tests_1  | create: simulator
+lighting-integration-tests_1  | LightbulbSimulator::connect_as lightbulb-2 to localhost:1883
+lighting-integration-tests_1  | LightbulbSimulator::on_connect Lightbulb=lightbulb-2 connected
+lighting-integration-tests_1  | LightbulbSimulator::on_message topic=lights/lightbulb-2/state/get payload=b&#39;&#39;
+lighting-integration-tests_1  | LightbulbSimulator::on_message public topic=lights/lightbulb-2/state payload=s_lights_state(newState=&#39;ON&#39;)
+lighting-integration-tests_1  | ReactiveListener::on_message topic=lights/lightbulb-2/state payload=b&#39;{&amp;quot;newState&amp;quot;: &amp;quot;ON&amp;quot;}&#39;
+lighting-integration-tests_1  | on_next: s_lights_state(newState=&#39;ON&#39;)
+lighting-integration-tests_1  | PASSED Step: the lights are connected
+lighting-integration-tests_1  | PASSED Step: I use &amp;lt;light_function&amp;gt; to control the lights
+lighting-integration-tests_1  | Awaiting tasks, count=1
+lighting-integration-tests_1  | start: run_until_complete
+lighting-integration-tests_1  | LightbulbSimulator::on_message topic=lights/lightbulb-2/function/off payload=b&#39;&#39;
+lighting-integration-tests_1  | LightbulbSimulator::on_message public topic=lights/lightbulb-2/state payload=s_lights_state(newState=&#39;OFF&#39;)
+lighting-integration-tests_1  | ReactiveListener::on_message topic=lights/lightbulb-2/state payload=b&#39;{&amp;quot;newState&amp;quot;: &amp;quot;OFF&amp;quot;}&#39;
+lighting-integration-tests_1  | on_next: s_lights_state(newState=&#39;OFF&#39;)
+lighting-integration-tests_1  | on_completed
+lighting-integration-tests_1  | PASSED Step: I await the result
+lighting-integration-tests_1  | PASSEDpytest::after &amp;lt;Function test_turn_on_the_lights[lightbulb-2-ON-off-OFF]&amp;gt;
+lighting-integration-tests_1  | after: awaitables
+lighting-integration-tests_1  | exit: loop
+lighting-integration-tests_1  |
+lighting-integration-tests_1  |
+lighting-integration-tests_1  | ============================== 2 passed in 22.08s ==============================
+reactive-testing_lighting-integration-tests_1 exited with code 0
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+  </channel>
+</rss>
+

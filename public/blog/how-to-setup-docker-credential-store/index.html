@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <meta name="author" content="Ovaar" />
+  
+  <meta name="description" content="Software Engineering blog" />
+  
+  <title>
+    
+      How to setup docker credential-store - Ovaar - Software engineering blog
+    
+  </title>
+   
+   
+  
+  <link rel="stylesheet" href="/css/stylesheet.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mvp.css/1.8.0/mvp.min.css">
+  <link href="" rel="feed" type="application/rss+xml" title="Ovaar - Software engineering blog">
+  
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-173180646-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+</head>
+<body>
+      <header><nav>
+  
+  <a href="https://ovaar.github.io/">Ovaar - Software engineering blog</a>
+  
+  <ul>
+    <li>
+      <a href="https://ovaar.github.io/">Home</a>
+    </li>
+    <li>
+      <a href="https://ovaar.github.io/blog/">Blog</a>
+    </li>
+	
+  </ul>
+</nav>
+<h1>How to setup docker credential-store</h1>
+        <p>
+          <small>published on Tue, 28 Jul 2020</small>
+        </p>
+      </header>
+      <hr>
+      <main>
+
+<span class="post-tags">
+  
+  #<a href="https://ovaar.github.io/tags/development/">Development</a>&nbsp;
+  
+  #<a href="https://ovaar.github.io/tags/devops/">Devops</a>&nbsp;
+  
+  #<a href="https://ovaar.github.io/tags/docker/">Docker</a>&nbsp;
+  
+</span>
+
+<article class="content">
+          <p>Since docker version 19 it start notifying the user that the docker credentials are stored unencrypted.</p>
+<pre tabindex="0"><code>WARNING! Your password will be stored unencrypted …
+</code></pre><p>To solve this we will use the Docker <a href="https://docs.docker.com/engine/reference/commandline/login/#credentials-store">credential-store</a> feature.</p>
+<ul>
+<li>Ubuntu: <a href="https://github.com/docker/docker-credential-helpers/releases/latest">docker-credential-pass</a></li>
+<li>OSX: osxkeychain</li>
+<li>Windows: wincred</li>
+</ul>
+<p>In this blog post we are going to use install the latest docker-credential-pass helper in combination with pass as a store and gpg for key generation.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">sudo apt-get install -y pass gpg
+gpg2 --gen-key
+<span style="color:#75715e"># copy gpg-key</span>
+pass init <span style="color:#e6db74">&#34;&lt;gpg-pub-key&gt;&#34;</span>
+
+sed -i <span style="color:#e6db74">&#39;0,/{/s/{/{\n\t&#34;credsStore&#34;: &#34;pass&#34;,/&#39;</span> ~/.docker/config.json
+</code></pre></div><p>The following one-line will download the latest <code>docker-credential-pass</code> helper from github and extract it to the <code>~/bin</code> directory:</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">curl -fsSLI -o /dev/null -w %<span style="color:#f92672">{</span>url_effective<span style="color:#f92672">}</span> https://api.github.com/repos/docker/docker-credential-helpers/releases/latest | xargs curl -s | grep -o <span style="color:#e6db74">&#34;https.*docker-credential-pass.*tar.gz&#34;</span> | wget -qi - <span style="color:#f92672">&amp;&amp;</span> mkdir -p ~/bin <span style="color:#f92672">&amp;&amp;</span> tar -xvf docker-credential-pass-v*-amd64.tar.gz -C ~/bin
+</code></pre></div><p>Finally, login with your docker credentials.</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">docker login
+</code></pre></div>
+        </article>
+      </main>
+      <footer><hr>
+
+</footer>
+    </body>
+</html>

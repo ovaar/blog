@@ -1,0 +1,123 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>shell on Ovaar - Software engineering blog</title>
+    <link>https://ovaar.github.io/tags/shell/</link>
+    <description>Recent content in shell on Ovaar - Software engineering blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Mon, 27 Jul 2020 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://ovaar.github.io/tags/shell/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>How to set Linux MAC address</title>
+      <link>https://ovaar.github.io/blog/how-to-set-linux-mac-address/</link>
+      <pubDate>Mon, 27 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://ovaar.github.io/blog/how-to-set-linux-mac-address/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;https://ovaar.github.io/blog/how-to-create-an-interactive-yocto-shell/&#34;&gt;Last post&lt;/a&gt; I wrote about a embedded device running Linux where a MAC address is stored in the EEPROM. The first six bytes are reserved for the MAC address which (ideally) only should be written once.&lt;/p&gt;
+&lt;p&gt;To apply the MAC address the numbers need to be hexadecimal formatted and separated with a colon(&lt;code&gt;:&lt;/code&gt;) symbol. It is possible to dynamically change the MAC address of Ethernet, beware that you need to be &lt;code&gt;root&lt;/code&gt; and that the ethernet interface is not up.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;ifconfig eth0 hw ether 00:01:02:03:04:05
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or, you could permanently change the MAC address by setting it into the &lt;code&gt;hwaddress&lt;/code&gt; in the &lt;code&gt;/etc/network/interfaces&lt;/code&gt; configuration file.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;auto eth0
+iface eth0 inet dhcp
+    hwaddress ether 00:01:02:03:04:05
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now we know how and where to set the MAC address. Next, we can read the first six bytes using &lt;code&gt;dd&lt;/code&gt; and pipe it to &lt;code&gt;hexdump&lt;/code&gt;. Fortunately, &lt;a href=&#34;https://www.man7.org/linux/man-pages/man1/hexdump.1.html&#34;&gt;hexdump&lt;/a&gt; already provides API for formatting the input.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;-e &#39;1/1&#39; %02x&lt;/code&gt; parameter will format each space followed by a byte into a hexadecimal number with two digits and a leading zero if needed.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;DELIMITER&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;:&amp;#34;&lt;/span&gt;
+MAC&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;dd &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;$EEPROM bs&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt; count&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; | hexdump -ve &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;1/1 &amp;#34;%02x&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;$DELIMITER&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;
+echo $MAC &lt;span style=&#34;color:#75715e&#34;&gt;# output 00:01:02:03:04:05:&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Finnaly the trailing colon &lt;code&gt;:&lt;/code&gt; needs to be removed. There are multiple ways to do this&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Pipe the output to &lt;code&gt;sed&lt;/code&gt; and replace the last &lt;code&gt;:&lt;/code&gt; OR&lt;/li&gt;
+&lt;li&gt;Use Bash Substring Expansion to remove the character from a string.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Solution 1:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;MAC&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;dd &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;$EEPROM bs&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt; count&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; | hexdump -ve &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;1/1 &amp;#34;%02x&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;$DELIMITER&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;&amp;#39;&lt;/span&gt; | sed s/:$//g&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Solution 2:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;MAC&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;dd &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;$EEPROM bs&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt; count&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; | hexdump -ve &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;1/1 &amp;#34;%02x&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;$DELIMITER&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;
+MAC&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;${&lt;/span&gt;MAC:&lt;span style=&#34;color:#66d9ef&#34;&gt;:-&lt;/span&gt;1&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color:#75715e&#34;&gt;# Remove last character &amp;#39;:&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Personally I prefer solution 2 since I find that &lt;code&gt;sed&lt;/code&gt; harder to read and I often have to explain it to other engineers who are reviewing it. Therefore solution 2 (with a comment) is clearer. If you are a system expert and love one-lines, go for solution 1.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>How to create an interactive Yocto shell</title>
+      <link>https://ovaar.github.io/blog/how-to-create-an-interactive-yocto-shell/</link>
+      <pubDate>Mon, 20 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://ovaar.github.io/blog/how-to-create-an-interactive-yocto-shell/</guid>
+      <description>&lt;p&gt;This post is about a feature request which I have implemented, at time of writing, about 2 years back. It always stuck with me because the project I was doing at the time was my first yocto experience. Topic has its own &lt;a href=&#34;https://github.com/topic-embedded-products/topic-platform&#34;&gt;BSP&lt;/a&gt; for FPGA boards on top of a Linux distribution. A custom board was specifically designed for a customor which would run our software that would interface with another custom low power embedded device.&lt;/p&gt;
+&lt;p&gt;Due to an increasing demand of delivering production ready devices to our customer, delivering actual software features became more and more challenging. Making the devices production ready required some manual steps and was something we did in-house.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Create a bootable SD card with a yocto image containing an &lt;a href=&#34;https://github.com/sbabic/swupdate&#34;&gt;swupdate&lt;/a&gt; package&lt;/li&gt;
+&lt;li&gt;Erase NOR-flash&lt;/li&gt;
+&lt;li&gt;Run swupdate and select the right boot partition&lt;/li&gt;
+&lt;li&gt;Erase EEPROM&lt;/li&gt;
+&lt;li&gt;Write MAC address to EEPROM&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;This turned out to be error sensitive process. So I decided to create a script which restricts the user input and does validation on the MAC address. Also it could flash the swupdate package, erase flash, write to EEPROM, erase the EEPROM and would prompt the user to select the boot partition to write the swupdate package to. Now I had the script, but still I needed to enter user credentials every time I booted from the SD-card. Would it not be great to bypass the getty login prompt and then run the script interactively 🤓!&lt;/p&gt;
+&lt;p&gt;Enough talk, lets dive in&amp;hellip;.&lt;/p&gt;
+&lt;p&gt;Bitbake allows for running code after succesfully building the root filesystem. The &lt;code&gt;ROOTFS_POSTPROCESS_COMMAND&lt;/code&gt; allowed to edit the getty systemd service files using &lt;a href=&#34;https://www.gnu.org/software/sed/manual/sed.html&#34;&gt;sed&lt;/a&gt;. Most importantly if you would open &lt;code&gt;console-getty.service&lt;/code&gt; it runs &lt;code&gt;agetty&lt;/code&gt; on the terminal in order to prompt for the user login. That not what I wanted, so I replaced it with &lt;code&gt;stty&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;console-getty.service&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;[Unit]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;Console Getty&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;After&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;systemd-user-sessions.service plymouth-quit-wait.service&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Before&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;getty.target&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;[Service]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;ExecStart&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;-/sbin/agetty --noclear --keep-baud console 115200,38400,9600 $TERM&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;idle&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Restart&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;always&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;RestartSec&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;0&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;UtmpIdentifier&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;cons&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;TTYPath&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/dev/console&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;TTYReset&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;yes&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;TTYVHangup&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;yes&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;KillMode&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;process&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;IgnoreSIGPIPE&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;no&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;SendSIGHUP&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;yes&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;[Install]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;WantedBy&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;getty.target&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;interactive.bb&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-py&#34; data-lang=&#34;py&#34;&gt;GETTY_SYSTEMD_SERVICES &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;?&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34; &lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    $&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{IMAGE_ROOTFS}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;$&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{systemd_system_unitdir}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/serial-getty@.service &lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    $&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{IMAGE_ROOTFS}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;$&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{systemd_system_unitdir}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/console-getty.service &lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    $&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{IMAGE_ROOTFS}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;$&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{systemd_system_unitdir}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/getty@.service &lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    $&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{IMAGE_ROOTFS}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;$&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{systemd_system_unitdir}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/container-getty@.service &lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+&lt;span style=&#34;color:#75715e&#34;&gt;# Replace agetty, which prompts for a user login&lt;/span&gt;
+&lt;span style=&#34;color:#75715e&#34;&gt;# with stty. Than disable tty reset and hangup to&lt;/span&gt;
+&lt;span style=&#34;color:#75715e&#34;&gt;# continue the user input stream.&lt;/span&gt;
+disable_login_prompt () {
+    sed &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;i &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/^\(ExecStart *=\(.*\)$\)/ExecStart=-\/bin\/stty -F \/dev\/ttyPS0 115200 cs8 sane /&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;$&lt;/span&gt;{GETTY_SYSTEMD_SERVICES}
+    sed &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;i &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/^\(TTYVHangup=yes$\)/TTYVHangup=no/&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;$&lt;/span&gt;{GETTY_SYSTEMD_SERVICES}
+    sed &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;i &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/^\(TTYReset=yes$\)/TTYReset=no/&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;$&lt;/span&gt;{GETTY_SYSTEMD_SERVICES}
+}
+
+ROOTFS_POSTPROCESS_COMMAND &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;disable_login_prompt;&amp;#34;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Next create a systemd service which runs after getty has started which to execute the interactive script.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;interactive.service&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;[Unit]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;Interactive installation script that runs at startup.&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;After&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;getty.target multi-user.target&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;[Service]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;oneshot&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;RemainAfterExit&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;yes&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;ExecStart&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/home/root/run-interactive-script&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;StandardInput&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;tty-force&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;StandardOutput&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;inherit&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;StandardError&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;inherit&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;[Install]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;WantedBy&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;multi-user.target&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now you can boot your system without an user login promp but still access all features of your BSP running Linux.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
+

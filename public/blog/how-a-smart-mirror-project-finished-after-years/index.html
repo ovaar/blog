@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html><head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <meta name="author" content="Ovaar" />
+  
+  <meta name="description" content="Software Engineering blog" />
+  
+  <title>
+    
+      How a smart mirror project finished after years of work - Ovaar - Software engineering blog
+    
+  </title>
+   
+   
+  
+  <link rel="stylesheet" href="/css/stylesheet.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/mvp.css/1.8.0/mvp.min.css">
+  <link href="" rel="feed" type="application/rss+xml" title="Ovaar - Software engineering blog">
+  
+<script type="application/javascript">
+var doNotTrack = false;
+if (!doNotTrack) {
+	window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+	ga('create', 'UA-173180646-1', 'auto');
+	
+	ga('send', 'pageview');
+}
+</script>
+<script async src='https://www.google-analytics.com/analytics.js'></script>
+
+</head>
+<body>
+      <header><nav>
+  
+  <a href="https://ovaar.github.io/">Ovaar - Software engineering blog</a>
+  
+  <ul>
+    <li>
+      <a href="https://ovaar.github.io/">Home</a>
+    </li>
+    <li>
+      <a href="https://ovaar.github.io/blog/">Blog</a>
+    </li>
+	
+  </ul>
+</nav>
+<h1>How a smart mirror project finished after years of work</h1>
+        <p>
+          <small>published on Wed, 15 Dec 2021</small>
+        </p>
+      </header>
+      <hr>
+      <main>
+
+<span class="post-tags">
+  
+  #<a href="https://ovaar.github.io/tags/development/">Development</a>&nbsp;
+  
+  #<a href="https://ovaar.github.io/tags/diy/">DIY</a>&nbsp;
+  
+</span>
+
+<article class="content">
+          <h2 id="introduction">Introduction&nbsp;<a class="anchor" href="#introduction"><svg class="feather">
+  <use xlink:href="/svg/feather-sprite.svg#corner-down-left"/>
+</svg>
+</a> </h2>
+<p>Early 2019 I noticed the <a href="https://magicmirror.builders/">Magic Mirror</a> project. To me the way of how woodworking and technology come together really got me. I just had to build one from scratch, ofcourse. It was a great opportunity for me to build something physical and learn a few things about some fancy new JavaScript frontend framework. I decided to call it the <a href="https://github.com/ovaar/mirrorm8">mirrorm8</a> project. I never wrote about it until now.</p>
+<p>Like with many ideas, our inspiration and creativity give birth to others. But as we slowly come back to earth, we realize that with the little time we have there is only so little we can do. Display the weather forecast, upcoming agenda items, voice control, gesture control, facial recognition in order to dynamically switch content per user, real-time traffic- and crypto and stocks &hellip;</p>
+<h2 id="research-fase">Research fase&nbsp;<a class="anchor" href="#research-fase"><svg class="feather">
+  <use xlink:href="/svg/feather-sprite.svg#corner-down-left"/>
+</svg>
+</a> </h2>
+<p>My first thoughts were to put the mirror in the bathroom, because this is where I would see the device every day. In the morning it could give me all the information for the day. That way I know if I can take my bike to work or on a rainy day the traffic information. My girlfriend and I both value our privacy and a few ideas required image processing. A bathroom and a camera don&rsquo;t go well for us, so a few ideas needed to be taken off the list. Except for one particular idea, which I really wanted to implement. I wanted to have some form of motion or proximity sensing, since I only want the mirror to be on when standing in front of it. Using a camera for motion detection was of the table and infrared (IR) wouldn&rsquo;t work, since most IR waves would be blocked by the glass mirror. Bluetooth (BLE) looked like a good alternative, but this required the users to always bring their smartphone close to the mirror. Perhaps another form or sound? While looking for solutions I stumbled upon the <a href="https://github.com/jdesbonnet/RCWL-0516">RCWL-0516</a>, a doppler radar microwave motion sensor capable of detecting proximity within approximately a range of 5 meters distance.</p>
+<p>I imagined the mirrors' frame to be build out of wood where the display would sink into the frame. This allows the glass to cover the entire front acting as a mirror. For the semi-transparent mirror look I choose to use a spy-mirror film over acrylic class, since it was much cheaper. A Raspberry Pi mounted at the back of the frame would run Mirrorm8 and control the display.</p>
+<h1 id="development-phase">Development phase</h1>
+<p>After preparing drawings and double-checking the measurements I got help from a friendly neighbour, who had all the professional tools, to cut wood. I soft grinded the wood for a smooth finish and applied <a href="https://www.polyvine.be/">Polyvine verniswas</a> to darken the wood, which gives the old-wood-looks.</p>
+<p>While I was shopping at a hardware store I found these thin metal interlocking connectors, which are great to mount the mirror close on to the wall. Normally, such brackets are used to mount regular mirrors on the wall. To be able to use them for my mirror I drilled some holes through the brackets and mounted them at the back of the wooden frame with some philips screws.</p>
+<p>23 April 2019 I started and developing the frontend using TypeScript and <a href="https://nuxtjs.org/">Nuxt.js</a>, a based Vue.js frontend framework. 
+Using <a href="https://dietpi.com/">DietPi</a> as the Linux image allowed me to easily install dependencies, do backups and receive updates with minimal effort.</p>
+<p>To reduce the software project scope, I decided to include only the following features:</p>
+<ul>
+<li>Display date and time</li>
+<li>Display the weather forecast</li>
+<li>Display upcoming Google Calandar items</li>
+<li>Dynamically turn on and off the monitor.</li>
+</ul>
+<p>At the time Nuxt.js just recently introduced support for TypeScript, but it was a lacking documentation, examples and a stable API. It was a recipe for disaster really, but that wouldn&rsquo;t stop me! The problem I faced at the time was that I wanted to integrate Socket.io with Nuxt.js in order to receive realtime updates from the backend to the frontend, but Nuxt didn&rsquo;t allow me to extend the expressjs server middleware for an unknown reason. After spending countless hours, I decided to put the project on ice for a little while until the Nuxt.js TypeScript was more stable.</p>
+<p>Just around the summer of August 2020, in my holidays, Nuxt.js released a stable version of @nuxt/typescript-runtime v1.0.0, allowing me to succesfully build the Mirrorm8 project with the desired serverMiddleware <a href="https://github.com/ovaar/mirrorm8/commit/b019c94de2d44afebc33e372c523a3f1f6592fdd">b019c94</a>. Finally! I rapidly finished automatically updating the weather forecast, upcoming Google Calendar items, date time and turning on/off the display dynamically using the RCWL-0516 proximity sensor afterwards.</p>
+<h1 id="validation-phase">Validation phase</h1>
+<p>Most of the developement could be done on a regular working station, but because of the Proximity sensor few functions needed to be tested on the hardware. Because mirrorm8 uses native dependencies it was easiest to be build the project on the target itself. The iterations were slow, because each time building the project took about 15 minutes. Luckly all of these steps I automated. At boot DietPi automatically starts the mirrorm8 systemd service and loads the URL with Chromium in kiosk mode. Unfortunately, my calendar items were not showing when running Mirrorm8 on the Raspberri Pi. Though, this worked just find on my work station. It turns out that Google OAuth2 is unsupported in the open-source <a href="https://www.chromium.org/">Chromium</a> browser. To fix it I replaced Google OAuth2 with a <a href="https://docs.simplecalendar.io/google-api-key/">Google API key</a> instead.</p>
+<h4 id="gallery">Gallery&nbsp;<a class="anchor" href="#gallery"><svg class="feather">
+  <use xlink:href="/svg/feather-sprite.svg#corner-down-left"/>
+</svg>
+</a> </h4>
+<p>
+
+
+<div class="center">
+<figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<img
+  
+  sizes="(min-width: 35em) 720px, 100vw"
+  srcset='
+  
+    /img/IMG_20190609_171025_hu072b19bd1b7417dbd7d12ab898ca9750_3335767_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG_20190609_171025_hu072b19bd1b7417dbd7d12ab898ca9750_3335767_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG_20190609_171025_hu072b19bd1b7417dbd7d12ab898ca9750_3335767_1200x0_resize_q75_box.jpg 1200w
+  '
+  
+    src="/img/IMG_20190609_171025.jpg"
+  
+  alt="Mirrorm8 - Wooden frame pieces">
+
+
+<figcaption>Mirrorm8 - Wooden frame pieces</figcaption>
+
+</figure>
+</div>
+
+
+
+
+
+
+<div class="center">
+<figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<img
+  
+  sizes="(min-width: 35em) 720px, 100vw"
+  srcset='
+  
+    /img/IMG_20190610_113928_hu4d0c80007d541926d094738d83ee00f2_3162232_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG_20190610_113928_hu4d0c80007d541926d094738d83ee00f2_3162232_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG_20190610_113928_hu4d0c80007d541926d094738d83ee00f2_3162232_1200x0_resize_q75_box.jpg 1200w
+  '
+  
+    src="/img/IMG_20190610_113928.jpg"
+  
+  alt="Mirrorm8 - Wooden frame assembled front">
+
+
+<figcaption>Mirrorm8 - Wooden frame assembled front</figcaption>
+
+</figure>
+</div>
+
+
+
+
+
+
+<div class="center">
+<figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<img
+  
+  sizes="(min-width: 35em) 720px, 100vw"
+  srcset='
+  
+    /img/IMG_20200423_225011_hu2d6ea7d7123e7de7ca420da059a3e988_3077641_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG_20200423_225011_hu2d6ea7d7123e7de7ca420da059a3e988_3077641_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG_20200423_225011_hu2d6ea7d7123e7de7ca420da059a3e988_3077641_1200x0_resize_q75_box.jpg 1200w
+  '
+  
+    src="/img/IMG_20200423_225011.jpg"
+  
+  alt="Mirrorm8 - Wooden frame assembled back">
+
+
+<figcaption>Mirrorm8 - Wooden frame assembled back</figcaption>
+
+</figure>
+</div>
+
+
+
+
+
+
+<div class="center">
+<figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<img
+  
+  sizes="(min-width: 35em) 720px, 100vw"
+  srcset='
+  
+    /img/IMG-20200423-WA0021_hu8ba62fbda03d17317b76ec26467ef6ad_1603421_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG-20200423-WA0021_hu8ba62fbda03d17317b76ec26467ef6ad_1603421_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG-20200423-WA0021_hu8ba62fbda03d17317b76ec26467ef6ad_1603421_1200x0_resize_q75_box.jpg 1200w
+  '
+  
+    src="/img/IMG-20200423-WA0021.jpg"
+  
+  alt="Mirrorm8 - Spy film glas">
+
+
+<figcaption>Mirrorm8 - Spy film glas</figcaption>
+
+</figure>
+</div>
+
+
+
+
+
+
+<div class="center">
+<figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<img
+  
+  sizes="(min-width: 35em) 720px, 100vw"
+  srcset='
+  
+    /img/IMG_20200720_190254_hu64c3adc61bcb95b801b219e4385efa6d_2829106_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG_20200720_190254_hu64c3adc61bcb95b801b219e4385efa6d_2829106_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG_20200720_190254_hu64c3adc61bcb95b801b219e4385efa6d_2829106_1200x0_resize_q75_box.jpg 1200w
+  '
+  
+    src="/img/IMG_20200720_190254.jpg"
+  
+  alt="Mirrorm8 - Chromium restore pages">
+
+
+<figcaption>Mirrorm8 - Chromium restore pages</figcaption>
+
+</figure>
+</div>
+
+
+
+
+
+
+<div class="center">
+<figure>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<img
+  
+  sizes="(min-width: 35em) 720px, 100vw"
+  srcset='
+  
+    /img/IMG_20211228_141034_hua4dbb07c34c16553504690b80b40c37a_3864203_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG_20211228_141034_hua4dbb07c34c16553504690b80b40c37a_3864203_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG_20211228_141034_hua4dbb07c34c16553504690b80b40c37a_3864203_1200x0_resize_q75_box.jpg 1200w
+  '
+  
+    src="/img/IMG_20211228_141034.jpg"
+  
+  alt="Mirrorm8 - Fully assembled ">
+
+
+<figcaption>Mirrorm8 - Fully assembled </figcaption>
+
+</figure>
+</div>
+
+
+</p>
+<h4 id="bill-of-material">Bill of material&nbsp;<a class="anchor" href="#bill-of-material"><svg class="feather">
+  <use xlink:href="/svg/feather-sprite.svg#corner-down-left"/>
+</svg>
+</a> </h4>
+<table>
+<thead>
+<tr>
+<th>Items</th>
+<th style="text-align:right">Cost</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>28&quot; TFT monitor</td>
+<td style="text-align:right">€70,00</td>
+</tr>
+<tr>
+<td>Glass</td>
+<td style="text-align:right">€20,00</td>
+</tr>
+<tr>
+<td>Glass Film</td>
+<td style="text-align:right">€12,00</td>
+</tr>
+<tr>
+<td>Wood</td>
+<td style="text-align:right">€15,00</td>
+</tr>
+<tr>
+<td>Raspberry pi 3</td>
+<td style="text-align:right">€40,00</td>
+</tr>
+<tr>
+<td>RCWL-0516</td>
+<td style="text-align:right">€3,31</td>
+</tr>
+<tr>
+<td>Breadboard</td>
+<td style="text-align:right">€4,50</td>
+</tr>
+<tr>
+<td>Glass clips</td>
+<td style="text-align:right">€2,00</td>
+</tr>
+<tr>
+<td>Sandisk Ultra Fit 4GB</td>
+<td style="text-align:right">€23,80</td>
+</tr>
+<tr>
+<td>&lsquo;Blind&rsquo; mirror wall mount</td>
+<td style="text-align:right">€12,00</td>
+</tr>
+<tr>
+<td>Total</td>
+<td style="text-align:right">€202,61</td>
+</tr>
+</tbody>
+</table>
+<h2 id="reflection">Reflection&nbsp;<a class="anchor" href="#reflection"><svg class="feather">
+  <use xlink:href="/svg/feather-sprite.svg#corner-down-left"/>
+</svg>
+</a> </h2>
+<ul>
+<li>Applying mirror foil is hard, because it leaves wrinkles. I recommend acrylic glass.</li>
+<li>I learned how to oil wood.</li>
+<li>Choosing new technology is risk full.</li>
+<li>Nuxt.js with TypeScript is great for productivity.</li>
+<li>vuex-class is great for separation of concerns.</li>
+<li>Google does not allow OAuth2 authentication from the open-source Chromium browser.</li>
+</ul>
+<p>Say, I would need to do it all over I would separate the server-side logic from the client. For example, I would rather use the MQTT protocol to notify Mirrorm8, as a client, to receive messages and update the frontend with new data automatically.</p>
+<p>Looking back, I really enjoyed doing this project and I hope you also liked to read about my journey.</p>
+
+        </article>
+      </main>
+      <footer><hr>
+
+</footer>
+    </body>
+</html>

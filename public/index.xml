@@ -1,0 +1,912 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Ovaar - Software engineering blog</title>
+    <link>https://ovaar.github.io/</link>
+    <description>Recent content on Ovaar - Software engineering blog</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <lastBuildDate>Wed, 15 Dec 2021 00:00:00 +0000</lastBuildDate>
+    
+	<atom:link href="https://ovaar.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    
+    <item>
+      <title>How a smart mirror project finished after years of work</title>
+      <link>https://ovaar.github.io/blog/how-a-smart-mirror-project-finished-after-years/</link>
+      <pubDate>Wed, 15 Dec 2021 00:00:00 +0000</pubDate>
+      
+      <guid>https://ovaar.github.io/blog/how-a-smart-mirror-project-finished-after-years/</guid>
+      <description>&lt;h2 id=&#34;introduction&#34;&gt;Introduction&lt;/h2&gt;
+&lt;p&gt;Early 2019 I noticed the &lt;a href=&#34;https://magicmirror.builders/&#34;&gt;Magic Mirror&lt;/a&gt; project. To me the way of how woodworking and technology come together really got me. I just had to build one from scratch, ofcourse. It was a great opportunity for me to build something physical and learn a few things about some fancy new JavaScript frontend framework. I decided to call it the &lt;a href=&#34;https://github.com/ovaar/mirrorm8&#34;&gt;mirrorm8&lt;/a&gt; project. I never wrote about it until now.&lt;/p&gt;
+&lt;p&gt;Like with many ideas, our inspiration and creativity give birth to others. But as we slowly come back to earth, we realize that with the little time we have there is only so little we can do. Display the weather forecast, upcoming agenda items, voice control, gesture control, facial recognition in order to dynamically switch content per user, real-time traffic- and crypto and stocks &amp;hellip;&lt;/p&gt;
+&lt;h2 id=&#34;research-fase&#34;&gt;Research fase&lt;/h2&gt;
+&lt;p&gt;My first thoughts were to put the mirror in the bathroom, because this is where I would see the device every day. In the morning it could give me all the information for the day. That way I know if I can take my bike to work or on a rainy day the traffic information. My girlfriend and I both value our privacy and a few ideas required image processing. A bathroom and a camera don&amp;rsquo;t go well for us, so a few ideas needed to be taken off the list. Except for one particular idea, which I really wanted to implement. I wanted to have some form of motion or proximity sensing, since I only want the mirror to be on when standing in front of it. Using a camera for motion detection was of the table and infrared (IR) wouldn&amp;rsquo;t work, since most IR waves would be blocked by the glass mirror. Bluetooth (BLE) looked like a good alternative, but this required the users to always bring their smartphone close to the mirror. Perhaps another form or sound? While looking for solutions I stumbled upon the &lt;a href=&#34;https://github.com/jdesbonnet/RCWL-0516&#34;&gt;RCWL-0516&lt;/a&gt;, a doppler radar microwave motion sensor capable of detecting proximity within approximately a range of 5 meters distance.&lt;/p&gt;
+&lt;p&gt;I imagined the mirrors&#39; frame to be build out of wood where the display would sink into the frame. This allows the glass to cover the entire front acting as a mirror. For the semi-transparent mirror look I choose to use a spy-mirror film over acrylic class, since it was much cheaper. A Raspberry Pi mounted at the back of the frame would run Mirrorm8 and control the display.&lt;/p&gt;
+&lt;h1 id=&#34;development-phase&#34;&gt;Development phase&lt;/h1&gt;
+&lt;p&gt;After preparing drawings and double-checking the measurements I got help from a friendly neighbour, who had all the professional tools, to cut wood. I soft grinded the wood for a smooth finish and applied &lt;a href=&#34;https://www.polyvine.be/&#34;&gt;Polyvine verniswas&lt;/a&gt; to darken the wood, which gives the old-wood-looks.&lt;/p&gt;
+&lt;p&gt;While I was shopping at a hardware store I found these thin metal interlocking connectors, which are great to mount the mirror close on to the wall. Normally, such brackets are used to mount regular mirrors on the wall. To be able to use them for my mirror I drilled some holes through the brackets and mounted them at the back of the wooden frame with some philips screws.&lt;/p&gt;
+&lt;p&gt;23 April 2019 I started and developing the frontend using TypeScript and &lt;a href=&#34;https://nuxtjs.org/&#34;&gt;Nuxt.js&lt;/a&gt;, a based Vue.js frontend framework. 
+Using &lt;a href=&#34;https://dietpi.com/&#34;&gt;DietPi&lt;/a&gt; as the Linux image allowed me to easily install dependencies, do backups and receive updates with minimal effort.&lt;/p&gt;
+&lt;p&gt;To reduce the software project scope, I decided to include only the following features:&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Display date and time&lt;/li&gt;
+&lt;li&gt;Display the weather forecast&lt;/li&gt;
+&lt;li&gt;Display upcoming Google Calandar items&lt;/li&gt;
+&lt;li&gt;Dynamically turn on and off the monitor.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;At the time Nuxt.js just recently introduced support for TypeScript, but it was a lacking documentation, examples and a stable API. It was a recipe for disaster really, but that wouldn&amp;rsquo;t stop me! The problem I faced at the time was that I wanted to integrate Socket.io with Nuxt.js in order to receive realtime updates from the backend to the frontend, but Nuxt didn&amp;rsquo;t allow me to extend the expressjs server middleware for an unknown reason. After spending countless hours, I decided to put the project on ice for a little while until the Nuxt.js TypeScript was more stable.&lt;/p&gt;
+&lt;p&gt;Just around the summer of August 2020, in my holidays, Nuxt.js released a stable version of @nuxt/typescript-runtime v1.0.0, allowing me to succesfully build the Mirrorm8 project with the desired serverMiddleware &lt;a href=&#34;https://github.com/ovaar/mirrorm8/commit/b019c94de2d44afebc33e372c523a3f1f6592fdd&#34;&gt;b019c94&lt;/a&gt;. Finally! I rapidly finished automatically updating the weather forecast, upcoming Google Calendar items, date time and turning on/off the display dynamically using the RCWL-0516 proximity sensor afterwards.&lt;/p&gt;
+&lt;h1 id=&#34;validation-phase&#34;&gt;Validation phase&lt;/h1&gt;
+&lt;p&gt;Most of the developement could be done on a regular working station, but because of the Proximity sensor few functions needed to be tested on the hardware. Because mirrorm8 uses native dependencies it was easiest to be build the project on the target itself. The iterations were slow, because each time building the project took about 15 minutes. Luckly all of these steps I automated. At boot DietPi automatically starts the mirrorm8 systemd service and loads the URL with Chromium in kiosk mode. Unfortunately, my calendar items were not showing when running Mirrorm8 on the Raspberri Pi. Though, this worked just find on my work station. It turns out that Google OAuth2 is unsupported in the open-source &lt;a href=&#34;https://www.chromium.org/&#34;&gt;Chromium&lt;/a&gt; browser. To fix it I replaced Google OAuth2 with a &lt;a href=&#34;https://docs.simplecalendar.io/google-api-key/&#34;&gt;Google API key&lt;/a&gt; instead.&lt;/p&gt;
+&lt;h4 id=&#34;gallery&#34;&gt;Gallery&lt;/h4&gt;
+&lt;p&gt;
+
+
+&lt;div class=&#34;center&#34;&gt;
+&lt;figure&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;img
+  
+  sizes=&#34;(min-width: 35em) 720px, 100vw&#34;
+  srcset=&#39;
+  
+    /img/IMG_20190609_171025_hu072b19bd1b7417dbd7d12ab898ca9750_3335767_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG_20190609_171025_hu072b19bd1b7417dbd7d12ab898ca9750_3335767_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG_20190609_171025_hu072b19bd1b7417dbd7d12ab898ca9750_3335767_1200x0_resize_q75_box.jpg 1200w
+  &#39;
+  
+    src=&#34;https://ovaar.github.io/img/IMG_20190609_171025.jpg&#34;
+  
+  alt=&#34;Mirrorm8 - Wooden frame pieces&#34;&gt;
+
+
+&lt;figcaption&gt;Mirrorm8 - Wooden frame pieces&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+&lt;/div&gt;
+
+
+
+
+
+
+&lt;div class=&#34;center&#34;&gt;
+&lt;figure&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;img
+  
+  sizes=&#34;(min-width: 35em) 720px, 100vw&#34;
+  srcset=&#39;
+  
+    /img/IMG_20190610_113928_hu4d0c80007d541926d094738d83ee00f2_3162232_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG_20190610_113928_hu4d0c80007d541926d094738d83ee00f2_3162232_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG_20190610_113928_hu4d0c80007d541926d094738d83ee00f2_3162232_1200x0_resize_q75_box.jpg 1200w
+  &#39;
+  
+    src=&#34;https://ovaar.github.io/img/IMG_20190610_113928.jpg&#34;
+  
+  alt=&#34;Mirrorm8 - Wooden frame assembled front&#34;&gt;
+
+
+&lt;figcaption&gt;Mirrorm8 - Wooden frame assembled front&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+&lt;/div&gt;
+
+
+
+
+
+
+&lt;div class=&#34;center&#34;&gt;
+&lt;figure&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;img
+  
+  sizes=&#34;(min-width: 35em) 720px, 100vw&#34;
+  srcset=&#39;
+  
+    /img/IMG_20200423_225011_hu2d6ea7d7123e7de7ca420da059a3e988_3077641_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG_20200423_225011_hu2d6ea7d7123e7de7ca420da059a3e988_3077641_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG_20200423_225011_hu2d6ea7d7123e7de7ca420da059a3e988_3077641_1200x0_resize_q75_box.jpg 1200w
+  &#39;
+  
+    src=&#34;https://ovaar.github.io/img/IMG_20200423_225011.jpg&#34;
+  
+  alt=&#34;Mirrorm8 - Wooden frame assembled back&#34;&gt;
+
+
+&lt;figcaption&gt;Mirrorm8 - Wooden frame assembled back&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+&lt;/div&gt;
+
+
+
+
+
+
+&lt;div class=&#34;center&#34;&gt;
+&lt;figure&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;img
+  
+  sizes=&#34;(min-width: 35em) 720px, 100vw&#34;
+  srcset=&#39;
+  
+    /img/IMG-20200423-WA0021_hu8ba62fbda03d17317b76ec26467ef6ad_1603421_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG-20200423-WA0021_hu8ba62fbda03d17317b76ec26467ef6ad_1603421_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG-20200423-WA0021_hu8ba62fbda03d17317b76ec26467ef6ad_1603421_1200x0_resize_q75_box.jpg 1200w
+  &#39;
+  
+    src=&#34;https://ovaar.github.io/img/IMG-20200423-WA0021.jpg&#34;
+  
+  alt=&#34;Mirrorm8 - Spy film glas&#34;&gt;
+
+
+&lt;figcaption&gt;Mirrorm8 - Spy film glas&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+&lt;/div&gt;
+
+
+
+
+
+
+&lt;div class=&#34;center&#34;&gt;
+&lt;figure&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;img
+  
+  sizes=&#34;(min-width: 35em) 720px, 100vw&#34;
+  srcset=&#39;
+  
+    /img/IMG_20200720_190254_hu64c3adc61bcb95b801b219e4385efa6d_2829106_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG_20200720_190254_hu64c3adc61bcb95b801b219e4385efa6d_2829106_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG_20200720_190254_hu64c3adc61bcb95b801b219e4385efa6d_2829106_1200x0_resize_q75_box.jpg 1200w
+  &#39;
+  
+    src=&#34;https://ovaar.github.io/img/IMG_20200720_190254.jpg&#34;
+  
+  alt=&#34;Mirrorm8 - Chromium restore pages&#34;&gt;
+
+
+&lt;figcaption&gt;Mirrorm8 - Chromium restore pages&lt;/figcaption&gt;
+
+&lt;/figure&gt;
+&lt;/div&gt;
+
+
+
+
+
+
+&lt;div class=&#34;center&#34;&gt;
+&lt;figure&gt;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+&lt;img
+  
+  sizes=&#34;(min-width: 35em) 720px, 100vw&#34;
+  srcset=&#39;
+  
+    /img/IMG_20211228_141034_hua4dbb07c34c16553504690b80b40c37a_3864203_500x0_resize_q75_box.jpg 500w
+  
+  
+    , /img/IMG_20211228_141034_hua4dbb07c34c16553504690b80b40c37a_3864203_800x0_resize_q75_box.jpg 800w
+  
+  
+    , /img/IMG_20211228_141034_hua4dbb07c34c16553504690b80b40c37a_3864203_1200x0_resize_q75_box.jpg 1200w
+  &#39;
+  
+    src=&#34;https://ovaar.github.io/img/IMG_20211228_141034.jpg&#34;
+  
+  alt=&#34;Mirrorm8 - Fully assembled &#34;&gt;
+
+
+&lt;figcaption&gt;Mirrorm8 - Fully assembled &lt;/figcaption&gt;
+
+&lt;/figure&gt;
+&lt;/div&gt;
+
+
+&lt;/p&gt;
+&lt;h4 id=&#34;bill-of-material&#34;&gt;Bill of material&lt;/h4&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Items&lt;/th&gt;
+&lt;th style=&#34;text-align:right&#34;&gt;Cost&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;28&amp;quot; TFT monitor&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;€70,00&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Glass&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;€20,00&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Glass Film&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;€12,00&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Wood&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;€15,00&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Raspberry pi 3&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;€40,00&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;RCWL-0516&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;€3,31&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Breadboard&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;€4,50&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Glass clips&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;€2,00&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Sandisk Ultra Fit 4GB&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;€23,80&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&amp;lsquo;Blind&amp;rsquo; mirror wall mount&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;€12,00&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Total&lt;/td&gt;
+&lt;td style=&#34;text-align:right&#34;&gt;€202,61&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;h2 id=&#34;reflection&#34;&gt;Reflection&lt;/h2&gt;
+&lt;ul&gt;
+&lt;li&gt;Applying mirror foil is hard, because it leaves wrinkles. I recommend acrylic glass.&lt;/li&gt;
+&lt;li&gt;I learned how to oil wood.&lt;/li&gt;
+&lt;li&gt;Choosing new technology is risk full.&lt;/li&gt;
+&lt;li&gt;Nuxt.js with TypeScript is great for productivity.&lt;/li&gt;
+&lt;li&gt;vuex-class is great for separation of concerns.&lt;/li&gt;
+&lt;li&gt;Google does not allow OAuth2 authentication from the open-source Chromium browser.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Say, I would need to do it all over I would separate the server-side logic from the client. For example, I would rather use the MQTT protocol to notify Mirrorm8, as a client, to receive messages and update the frontend with new data automatically.&lt;/p&gt;
+&lt;p&gt;Looking back, I really enjoyed doing this project and I hope you also liked to read about my journey.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>C# Performance - Profiling introduction</title>
+      <link>https://ovaar.github.io/blog/csharp-performance-profiling-introduction/</link>
+      <pubDate>Wed, 14 Oct 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://ovaar.github.io/blog/csharp-performance-profiling-introduction/</guid>
+      <description>&lt;p&gt;Welcome! In this blog series I will share some of the knowledge I gained when doing performance optimizations for a project some time ago. Optimizing code for performance requires good knowledge of the fundamental concepts of computer architecture. In this first blog post I will explain about software profiling, some of the computer architecture concepts and my personal experience what worked for my and what did not. In later post(s) I will go more into detail in how to optimize code for performance.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://media1.tenor.com/images/9a8cd260ef1cc7f1544c65530966ee93/tenor.gif?itemid=5593963&#34; alt=&#34;high performance&#34;&gt;&lt;/p&gt;
+&lt;p&gt;About a year ago I was challenged to improve the overall application performance of a C# WPF application. The application was built for a steel plate inspection system. Using ultrasound, the system is capable of detecting defects in steel plates. For your imagination, these steel plate could go up to 40 by 5 meters (pretty huge). One of the main functions of the application is to receive and parse streams of data which were send by an FPGA via TCP. After parsing the characteristics of a &amp;ldquo;shot&amp;rdquo; were being calculated and a 3D model of the steel plate is updated and displayed in near real-time.&lt;/p&gt;
+&lt;p&gt;When I joined this project, it was already running for about two years and the first prototype was built. This machine contained 1 FPGA and a single transceiver probe. At that time there were already signs of performance issues. But before we could start improving the software, we had to polish the existing application for its first customer. Because of time pressure the machine needed to be sold and the next generation had to be built as well. This next generation machine contained 20 FPGA&amp;rsquo;s and 80 transceiver probes. These requirements were getting more serious but theoretically this would not be a problem.&lt;/p&gt;
+&lt;p&gt;Some time went by and more and more code were added, the customers wishes changed, the principal system architect left the project and no replacement was ever found. Engineers with different ideas have come and gone. The &amp;ldquo;legacy&amp;rdquo; code base was dying to get an update! I remember when connecting more than a single FPGA device the software would completely freeze the computer. We were hitting a wall! The software architecture was not scalable at all&amp;hellip;&lt;/p&gt;
+&lt;p&gt;You might have found yourself in such a situation. When experiencing performance issues, you will find yourself very quickly in a new world with software profilers. Profilers such as the one embedded in Microsoft Visual Studio, &lt;a href=&#34;https://software.intel.com/content/www/us/en/develop/tools/vtune-profiler.html&#34;&gt;Intel VTune Profiler&lt;/a&gt;, Reshaper tools such as &lt;a href=&#34;https://www.jetbrains.com/profiler/&#34;&gt;dotTrace&lt;/a&gt; or &lt;a href=&#34;https://www.jetbrains.com/dotmemory/&#34;&gt;dotMemory&lt;/a&gt;.&lt;/p&gt;
+&lt;br /&gt;
+&lt;h3 id=&#34;profiling&#34;&gt;Profiling&lt;/h3&gt;
+&lt;p&gt;Software profiling is about getting metrics/samples about the application or system-wide used resources like CPU, RAM or GPU. These metrics can give insight in how fast code is executed, what memory is being allocated, how well the code is being executed in parallel, etc&amp;hellip;&lt;/p&gt;
+&lt;p&gt;Sampling can be done in two different ways: User mode Sampling and Hardware Event-Base Sampling (Interrupt). In order to use User Mode sampling the profiling application has to inject and recompile the program in order to get the application metrics. Using this method, the metrics will be time based and acquiring these metrics has about 5% overhead on the overall system performance.&lt;/p&gt;
+&lt;p&gt;On the other hand, Hardware Event-Based Sampling uses the PMU. Every modern CPU nowadays contains a Performance Monitoring Unit (PMU). The PMU can sample data per number of cpu-cycles or can be triggered when a specific instruction is executed. Since this is hardware embedded on the CPU it is able capture metrics of the whole system. and it has a minimal performance overhead.&lt;/p&gt;
+&lt;p&gt;Below a small comparison table between these two sampling methods.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;User mode Sampling&lt;/th&gt;
+&lt;th&gt;Hardware Event-Based Sampling&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Time-Based Sampling (TBS)&lt;/td&gt;
+&lt;td&gt;Performance Monitoring Unit (PMU)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;~5% overhead&lt;/td&gt;
+&lt;td&gt;Minimum overhead&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Application resources only&lt;/td&gt;
+&lt;td&gt;System-wide resources&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Inject code into binary&lt;/td&gt;
+&lt;td&gt;Uses system interrupts&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;br /&gt;
+&lt;h4 id=&#34;hotspots&#34;&gt;Hotspots&lt;/h4&gt;
+&lt;p&gt;Code &amp;ldquo;hotspots&amp;rdquo; refer to functions in the call stack which are executed very often. Reducing the execution time or the amount of times executing the operation can result in faster overall execution time of your program, by making room for other operations.&lt;/p&gt;
+&lt;p&gt;When it comes to finding these hotspots, I personally prefer using Intel VTune Profiler&amp;rsquo;s &lt;em&gt;Hotspot analysis&lt;/em&gt;. Intel VTune has a clear overview, visualizing the top hotspots and allowing the user to easily traverse the call stack.&lt;/p&gt;
+&lt;br /&gt;
+&lt;h4 id=&#34;memory-allocation&#34;&gt;Memory Allocation&lt;/h4&gt;
+&lt;p&gt;Allocating new memory reserves a block of memory on the stack, heap or virtual memory. Both the stack and heap are physically located in RAM (Random Access Memory). If you are new to the concepts stack or heap or just looking for a refresher; The stack is a fixed size block of memory reserved for the execution of a thread. In processes each thread has its own stack. A stack is a LIFO (last in first out) and consists of stack frames. On each function call a new stack frame, containing local variables, is added. When a function exits the stack frame is &lt;code&gt;popped&lt;/code&gt; from the stack, releasing the allocated memory automatically. Due to the fixed size of the stack it is possible to run out of memory, this results in a StackOverflow Exception. The stack size is determined at application startup and depends on the system architecture and operating system.&lt;/p&gt;
+&lt;p&gt;The heap is memory reserved space for dynamic memory allocations. Dynamic allocations have a different lifecycle that needs to be managed by the application runtime. This can be manually where the program needs to explicitly free the memory by using &lt;code&gt;free&lt;/code&gt; or &lt;code&gt;delete&lt;/code&gt; or by a Garbage Collector, like in .NET. Unlike the stack that can throw an exception when it overflows, the heap is able to also make use of virtual memory. Virtual memory is memory that can be located on a hard disk, which has considerably slower access times than reading from RAM (latency). The process of running out of RAM memory and making use of virtual memory is called &lt;em&gt;swapping&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;To put the latency numbers in perspective.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;Latency Comparison Numbers (~2012)
+----------------------------------
+L1 cache reference                           0.5 ns
+Branch mispredict                            5   ns
+L2 cache reference                           7   ns                      14x L1 cache
+Mutex lock/unlock                           25   ns
+Main memory reference                      100   ns                      20x L2 cache, 200x L1 cache
+Compress 1K bytes with Zippy             3,000   ns        3 us
+Send 1K bytes over 1 Gbps network       10,000   ns       10 us
+Read 4K randomly from SSD*             150,000   ns      150 us          ~1GB/sec SSD
+Read 1 MB sequentially from memory     250,000   ns      250 us
+Round trip within same datacenter      500,000   ns      500 us
+Read 1 MB sequentially from SSD*     1,000,000   ns    1,000 us    1 ms  ~1GB/sec SSD, 4X memory
+Disk seek                           10,000,000   ns   10,000 us   10 ms  20x datacenter roundtrip
+Read 1 MB sequentially from disk    20,000,000   ns   20,000 us   20 ms  80x memory, 20X SSD
+Send packet CA-&amp;gt;Netherlands-&amp;gt;CA    150,000,000   ns  150,000 us  150 ms
+
+Notes
+-----
+1 ns = 10^-9 seconds
+1 us = 10^-6 seconds = 1,000 ns
+1 ms = 10^-3 seconds = 1,000 us = 1,000,000 ns
+
+Credit
+------
+By Jeff Dean:               http://research.google.com/people/jeff/
+Originally by Peter Norvig: http://norvig.com/21-days.html#answers
+
+Contributions
+-------------
+&#39;Humanized&#39; comparison:  https://gist.github.com/hellerbarde/2843375
+Visual comparison chart: http://i.imgur.com/k0t1e.png
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Allocating memory on the stack is faster than on the heap. This is due to that each allocation on the heap requires searching for a block which is big enough to fit the data in or even splitting the data over multiple blocks while guaranteeing thread-safety.&lt;/p&gt;
+&lt;p&gt;When profiling for memory allocations I found that Resharper dotTrace works for me best. Here is why:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Clear overview of total memory usage within the profile snapshot.&lt;/li&gt;
+&lt;li&gt;Allows filtering by memory type.&lt;/li&gt;
+&lt;li&gt;Allows filtering of memory allocations within a selected timeline.&lt;/li&gt;
+&lt;li&gt;Allows filtering of memory allocations per thread.&lt;/li&gt;
+&lt;li&gt;Visually shows Garbage Collector run time.&lt;/li&gt;
+&lt;li&gt;Visually shows UI freezes due to excessive memory traffic and Garbage Collections, blocking the main thread.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;img src=&#34;https://resources.jetbrains.com/help/img/dotnet/2020.2/memory_allocation_type.png&#34; alt=&#34;memory allocation type&#34;&gt;&lt;/p&gt;
+&lt;br /&gt;
+&lt;h4 id=&#34;microarchitecture&#34;&gt;Microarchitecture&lt;/h4&gt;
+&lt;p&gt;The CPU contains allot of optimizations to maximize the performance. Examples of these feature are caching and branch prediction. Even when the CPU facilitates optimizations, they can also work against you, so being aware of how the CPU works is essential when writing good code. I recommend watching this video; &lt;a href=&#34;https://www.infoq.com/presentations/microarchitecture-modern-cpu/&#34;&gt;Understanding CPU Microarchitecture to Increase Performance&lt;/a&gt;, where Alex Blewitt talks about: the CPU layout, caching, the memory layout, execution units and scheduling.&lt;/p&gt;
+&lt;p&gt;While on average branch prediction is about 95% of the times right, it can become expensive. Writing branch-free code would eliminate branches predication completely but this is not achievable for all software. Daniel Lemire wrote an excellent article about removing branches: &lt;a href=&#34;https://www.infoq.com/articles/making-code-faster-taming-branches/&#34;&gt;Making Your Code Faster by Taming Branches&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Intel VTune Profiler offers great insight in the Microarchitecture bottlenecks of your system processes or a single application. It gives insight in:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Code that causes memory stalls because of inefficient reads or writes (hot memory access)&lt;/li&gt;
+&lt;li&gt;Code which is delayed because of longer memory read/write latency due to the memory being stored in an older memory cache generation (L1, L2, L3 or in RAM).&lt;/li&gt;
+&lt;li&gt;Branch mispredictions&lt;/li&gt;
+&lt;li&gt;Availability of Pipeline execution slots&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id=&#34;threading-efficiency&#34;&gt;Threading Efficiency&lt;/h4&gt;
+&lt;p&gt;Each process has its own resources in order to execute a program such as; virtual address space, executable code, open handles to system objects, a security context, a unique process identifier, environment variables, a priority class, minimum and maximum working set sizes, and at least one thread of execution. The first thread is often called &lt;em&gt;primary thread&lt;/em&gt; or &lt;em&gt;main thread&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;A thread, linked to a process, can be scheduled for execution. Each thread shares the virtual address space and system resources of a process. In addition, each thread maintains exception handlers, a scheduling priority, thread local storage, a unique thread identifier, and a set of structures the system will use to save the thread context until it is scheduled. The thread context includes the thread&amp;rsquo;s set of machine registers, the kernel stack, a thread environment block, and a user stack in the address space of the thread&amp;rsquo;s process. Threads can also have their own security context, which can be used for impersonating clients.&lt;/p&gt;
+&lt;p&gt;Multiprocessors computers can execute in parallel as many threads as there are processors. A part of the kernel called the &lt;em&gt;scheduler&lt;/em&gt; manages the threads when they are executed as well as the amount of time they have to execute (timeslice or quantum). The scheduler is basically a load balancer to keep all computer resources busy. When the scheduler switches between threads there is overhead due to booking, this is called &lt;em&gt;context switching&lt;/em&gt;. Ideally you would want to limit the amount of threads to the amount of CPU cores in your program to maximize performance by reducing context switching. This sounds like a perfect solution, but there will always be context switches due to other running processes on the operating system. It is hard to put a number on what the costs are of context switching. In general, the cost of context switch ranges from several microseconds to more than one thousand microseconds depending on CPU architecture and program cache sizes.&lt;/p&gt;
+&lt;p&gt;All threads can access and modify data on the heap. If multiple threads access the same resource and at least one of them will be writing, you need to protect the critical section. To achieve thread-safeness you can:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Confinement: don’t share data between threads.&lt;/li&gt;
+&lt;li&gt;Immutability: make the shared data immutable.&lt;/li&gt;
+&lt;li&gt;Use existing thread safe data types: use a data type that does the coordination for you.&lt;/li&gt;
+&lt;li&gt;Synchronization; prevent threads from accessing the shared data at the same time.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Looking back at &lt;a href=&#34;#memory-allocation&#34;&gt;Memory Allocation&lt;/a&gt;, we know that the .NET Garbage Collector(GC) automatically searches for resources which can be released. Now, take threading into the equation with the GC; Heap resources are shared by all threads and shared resources need protected when accessing them. Say if many objects with a small lifetime are being allocated, the GC will need more time to release those resources, resulting in all other threads being blocked by the GC. Eventually, stressing the GC can result in a snowball effect that can be experienced by UI Freezes, where the operating system temporary seems to be unresponsive.&lt;/p&gt;
+&lt;p&gt;Threading efficiency boils down to the amount of time threads must wait for synchronization due to the amount of executions by a thread inside a critical section of a shared resource, resulting in bad CPU utilization. Parallel performance suffers when waits occur while cores are under-utilized.&lt;/p&gt;
+&lt;p&gt;For me Intel VTune Profiler&amp;rsquo;s Threading Analysis helped to analyze thread wait time and find synchronization bottlenecks best, while Resharper DotTrace had a better overview of the allocated memory, UI Freezes combined with the time in GC.&lt;/p&gt;
+&lt;p&gt;Even though there is no straightforward answer to every problem, problems tend to have things in common. In my next performance post, we will visit some of these common issues including examples and solutions.&lt;/p&gt;
+&lt;p&gt;I hope you enjoyed this long read, until next time!&lt;br&gt;
+Thomas&lt;/p&gt;
+&lt;br /&gt;
+&lt;h4 id=&#34;resoures&#34;&gt;Resoures&lt;/h4&gt;
+&lt;p&gt;Even more details can be found in the following pages.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.infoq.com/presentations/microarchitecture-modern-cpu/&#34;&gt;Understanding CPU Microarchitecture to Increase Performance - Alex Blewitt&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.infoq.com/articles/making-code-faster-taming-branches/&#34;&gt;Making Your Code Faster by Taming Branches - Daniel Lemire&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://gist.github.com/jboner/2841832&#34;&gt;Latency Comparison Numbers (~2012) - Jonas Bonér&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://docs.microsoft.com/en-gb/windows/win32/procthread/about-processes-and-threads&#34;&gt;About Processes and Threads - Microsoft&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.usenix.org/legacy/events/expcs07/papers/2-li.pdf&#34;&gt;Quantifying The Cost of Context Switch - Chuanpeng Li, Chen Ding, Kai Shen&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://web.mit.edu/6.005/www/fa15/classes/23-locks/&#34;&gt;Reading 23: Locks and Synchronization - MIT&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Reactive testing with Gherkin, ReactiveX and asyncio</title>
+      <link>https://ovaar.github.io/blog/reactive-testing-with-gherkin-reactivex-and-asyncio/</link>
+      <pubDate>Mon, 14 Sep 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://ovaar.github.io/blog/reactive-testing-with-gherkin-reactivex-and-asyncio/</guid>
+      <description>&lt;p&gt;Have you ever written integration test with asynchronous behavior? I have, and it has always been a struggle&amp;hellip; CI/CD pipelines which regularly fail because of some timeout. Then, &amp;ldquo;a wild project manager appears!&amp;rdquo;, and starts asking questions why investigating takes so long&amp;hellip;&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Solution: The timeout is increased to quickly solve the issue, when usually the failure is caused by regression.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;There must be some more elegant way to assert or await asynchronous calls in Behavior Driven Development (BDD) steps.&lt;/p&gt;
+&lt;p&gt;I am excited, enjoy what&amp;rsquo;s coming next! I developed a more comfortable way to add asynchronous assertions in integration tests without adding &lt;code&gt;time.sleep(n)&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;TLDR;
+This post is about practical use of combining RxPy, pytest, Gherkin, asyncio with automated testing using Python and not an introduction of the previously described libraries. Regardless of using Python I believe this test strategy can be reused with any other programming language supported by ReactiveX. The application sources can be found on &lt;a href=&#34;https://github.com/ovaar/reactive-testing&#34;&gt;Github&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s break it down, but before I do I would like to set the scene for the demo application with the following use case.&lt;/p&gt;
+&lt;blockquote&gt;
+&lt;p&gt;Use case: I have a central lighting system where lights can connect to and as a user I want to be able to turn on and off the lights.&lt;/p&gt;
+&lt;/blockquote&gt;
+&lt;p&gt;To only focus on the testing part, we will abstract the lighting hardware using a simulator and assume the lights are able to communicate via the MQTT protocol. Let&amp;rsquo;s begin with looking at how the Gherkin test Feature is described which will be used in order to execute the test.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-gherkin&#34; data-lang=&#34;gherkin&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# lighting\integration_tests\tests\features\lighting.feature&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;Feature:&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; The lights must be able to be turned on and off
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;    &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;Scenario:&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; The lights are controlled
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;        Given &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;I have a light with the id &lt;/span&gt;&amp;lt;light_id&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;And &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;the light &lt;/span&gt;&amp;lt;light_id&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; is turned &lt;/span&gt;&amp;lt;light_begin_state&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;And &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;I expect the final state of light &lt;/span&gt;&amp;lt;light_id&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; to be &lt;/span&gt;&amp;lt;light_final_state&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;When &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;the lights are connected
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;Then &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;I use &lt;/span&gt;&amp;lt;light_function&amp;gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; to control the lights
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;And &lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;I await the result
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;        &lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;Examples:&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt; Vertical&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;            |&lt;/span&gt; light_id&lt;span style=&#34;color:#66d9ef&#34;&gt;          |&lt;/span&gt; lightbulb-1&lt;span style=&#34;color:#66d9ef&#34;&gt; |&lt;/span&gt; lightbulb-2&lt;span style=&#34;color:#66d9ef&#34;&gt; |&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;            |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; light_begin_state&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt; |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; OFF&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;         |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; ON&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;          |&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;            |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; light_function&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;    |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; on&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;          |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; off&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;         |&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;
+&lt;/span&gt;&lt;span style=&#34;color:#a6e22e&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;            |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; light_final_state&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt; |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; ON&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;          |&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt; OFF&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;         |
+&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The test consists of three stage. In some way it like a Unit Test it uses Arrange / Act / Assert (AAA). In the first stage an object is build containing the initial stage for the simulator as well as setting up the the ReactiveX Observables in order to receive new states via a Mqtt Client. The ReactiveX Observables you could compare to adding a &lt;code&gt;spy&lt;/code&gt; to a method in order to check if it was called. This must be done before executing the test so that we will not miss any events.&lt;/p&gt;
+&lt;p&gt;The second stage adds Lightbulb Simulators to the &lt;code&gt;TestContext&lt;/code&gt; and connects them to the MQTT broker. The simulator publishes the topic &lt;code&gt;lights/connect/$lightId&lt;/code&gt; to register itself with the &lt;code&gt;core&lt;/code&gt; module. Then the connected lights can be controlled by sending an MQTT message to topic &lt;code&gt;lights/function/on&lt;/code&gt; or &lt;code&gt;lights/function/off&lt;/code&gt;. The &lt;code&gt;core&lt;/code&gt; will publish an individual topic for each simulated Lightbulb. Below you see the &lt;code&gt;Lightbulb&lt;/code&gt; data holder class. In order to understand the last BDD step &lt;code&gt;And I await the result&lt;/code&gt; I have to first explain about how &lt;code&gt;rx.subject&lt;/code&gt; works.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# lighting\integration_tests\tests\data.py&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; typing &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; Dict, Optional
+&lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; rx.subject &lt;span style=&#34;color:#66d9ef&#34;&gt;as&lt;/span&gt; RxSubject
+
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;Lightbulb&lt;/span&gt;(object):
+    uuid: str
+    state: Optional[str] &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;None&lt;/span&gt;
+    light_state: RxSubject&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;Subject
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; __init__(self, uuid: str):
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;uuid &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; uuid
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;light_state &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; RxSubject&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;Subject()
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;complete&lt;/span&gt;(self):
+        self&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;light_state&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;on_completed()
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The class &lt;code&gt;rx.Subject&lt;/code&gt; inherits from &lt;code&gt;rx.core.Observable&lt;/code&gt; and &lt;code&gt;rx.core.Observer&lt;/code&gt;. The class &lt;code&gt;rx.Subject&lt;/code&gt; allows you to push data into the Rx Operators using the &lt;code&gt;rx.core.Observable&lt;/code&gt; interface. When a new state is received via the topic: &lt;code&gt;lights/{lightbulbId/state&lt;/code&gt;, then the &lt;code&gt;light_state.on_next(...)&lt;/code&gt; is called which pipes the data to the &lt;code&gt;rx.operators&lt;/code&gt;. ReactiveX operators are basically predicate functions which will evaluate the observable state with every element added to the sequence. I use &lt;a href=&#34;http://reactivex.io/documentation/operators/takewhile.html&#34;&gt;rx.operators.take_while&lt;/a&gt; to evaluate if the state of the lightbulb equals the expected &lt;code&gt;light_final_state&lt;/code&gt;. The &lt;code&gt;take_while&lt;/code&gt; Operator will automatically call on_complete if predicate function returns &lt;code&gt;False&lt;/code&gt;.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# lighting\integration_tests\tests\steps\lights.py&lt;/span&gt;
+&lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; rx.operators &lt;span style=&#34;color:#66d9ef&#34;&gt;as&lt;/span&gt; RxOp
+&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; rx &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; Observable &lt;span style=&#34;color:#66d9ef&#34;&gt;as&lt;/span&gt; RxObservable
+&lt;span style=&#34;color:#f92672&#34;&gt;from&lt;/span&gt; rx.scheduler.eventloop &lt;span style=&#34;color:#f92672&#34;&gt;import&lt;/span&gt; AsyncIOScheduler
+
+&lt;span style=&#34;color:#a6e22e&#34;&gt;@given&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;I expect the final state of light &amp;lt;light_id&amp;gt; to be &amp;lt;light_final_state&amp;gt;&amp;#39;&lt;/span&gt;)
+&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;light_state_equals&lt;/span&gt;(light_id: str,
+                       light_final_state: str,
+                       test_context: Data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;TestContext,
+                       loop: asyncio&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;AbstractEventLoop,
+                       awaitables: List[RxObservable]):
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;assert&lt;/span&gt; isinstance(light_id, str)
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;assert&lt;/span&gt; isinstance(light_final_state, str)
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;take_while_state&lt;/span&gt;(payload: Structs&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;s_lights_state) &lt;span style=&#34;color:#f92672&#34;&gt;-&amp;gt;&lt;/span&gt; bool:
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt; payload&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;newState &lt;span style=&#34;color:#f92672&#34;&gt;!=&lt;/span&gt; light_final_state
+
+    timeout_sec &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;10.0&lt;/span&gt;
+    &lt;span style=&#34;color:#75715e&#34;&gt;# Get the lightbulb by id from the test context fixture&lt;/span&gt;
+    lightbulb: Data&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;Lightbulb &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; test_context&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;lightbulbs[light_id]
+
+	&lt;span style=&#34;color:#75715e&#34;&gt;# Rx .pipe returns a new observable&lt;/span&gt;
+    observable: RxObservable &lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; lightbulb&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;light_state&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;pipe(
+    	&lt;span style=&#34;color:#75715e&#34;&gt;# Add a default timeout for the test to fail if no data is received&lt;/span&gt;
+        RxOp&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;timeout(timeout_sec),
+        &lt;span style=&#34;color:#75715e&#34;&gt;# Add the AsyncIOScheduler to be able to asynchronously re-evaluate&lt;/span&gt;
+    	&lt;span style=&#34;color:#75715e&#34;&gt;# the state of the RxObserable for changes&lt;/span&gt;
+        RxOp&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;observe_on(scheduler&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;AsyncIOScheduler(loop)),
+        &lt;span style=&#34;color:#75715e&#34;&gt;# Add data to the RxObservable sequence while the predicate function&lt;/span&gt;
+    	&lt;span style=&#34;color:#75715e&#34;&gt;# returns True. If it returns False the RxObservable is automatically&lt;/span&gt;
+    	&lt;span style=&#34;color:#75715e&#34;&gt;# completed and it includes the last result.&lt;/span&gt;
+        RxOp&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;take_while(take_while_state, inclusive&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;True&lt;/span&gt;),
+    )
+
+    observable&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;subscribe(
+        on_next&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;lambda&lt;/span&gt; i: print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;on_next: &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;i&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;),
+        on_error&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;lambda&lt;/span&gt; e: print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;on_error: &lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;e&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;),
+        on_completed&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;lambda&lt;/span&gt;: print(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;on_completed&amp;#34;&lt;/span&gt;),
+        scheduler&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;AsyncIOScheduler(loop)
+    )
+
+    awaitables&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;append(observable)
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Finally, the last step &lt;code&gt;And I await the result&lt;/code&gt; from the file &lt;code&gt;lighting.feature&lt;/code&gt; uses Asyncio to asynchronously await the ReactiveX Observables which were added to the &lt;code&gt;awaitables&lt;/code&gt; list. The &lt;a href=&#34;https://docs.python.org/3/library/asyncio-task.html#asyncio.gather&#34;&gt;asyncio.gather&lt;/a&gt; function will await for all results to be completed. Wrapping the &lt;code&gt;asyncio.gather&lt;/code&gt; in a &lt;code&gt;main&lt;/code&gt; function and executing it on the asyncio event loop using &lt;code&gt;loop.run_until_complete(main())&lt;/code&gt; will block until all have been completed successfully or an exception is thrown.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-python&#34; data-lang=&#34;python&#34;&gt;&lt;span style=&#34;color:#75715e&#34;&gt;# lighting\integration_tests\tests\steps\lights.py&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;@then&lt;/span&gt;(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;I await the result&amp;#39;&lt;/span&gt;)
+&lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;await_the_result&lt;/span&gt;(awaitables: List[RxObservable], loop: asyncio&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;AbstractEventLoop):
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt; len(awaitables) &lt;span style=&#34;color:#f92672&#34;&gt;==&lt;/span&gt; &lt;span style=&#34;color:#ae81ff&#34;&gt;0&lt;/span&gt;:
+        print(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Nothing to await, continuing... &amp;#39;&lt;/span&gt;)
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;return&lt;/span&gt;
+
+    print(&lt;span style=&#34;color:#e6db74&#34;&gt;f&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;Awaiting tasks, count=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{&lt;/span&gt;len(awaitables)&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&lt;/span&gt;)
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;async&lt;/span&gt; &lt;span style=&#34;color:#66d9ef&#34;&gt;def&lt;/span&gt; &lt;span style=&#34;color:#a6e22e&#34;&gt;main&lt;/span&gt;():
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;await&lt;/span&gt; asyncio&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;gather(&lt;span style=&#34;color:#f92672&#34;&gt;*&lt;/span&gt;awaitables)
+
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;try&lt;/span&gt;:
+        print(&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;start: run_until_complete&amp;#39;&lt;/span&gt;)
+        loop&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;run_until_complete(main())
+        awaitables&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;clear()
+    &lt;span style=&#34;color:#66d9ef&#34;&gt;except&lt;/span&gt;:
+        awaitables&lt;span style=&#34;color:#f92672&#34;&gt;.&lt;/span&gt;clear()
+        &lt;span style=&#34;color:#66d9ef&#34;&gt;raise&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;That is all! I hope I inspired you or gave you some insight in how to approach asynchronous assertions in testing software. For the ones who are curious about the test output, have a look below.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;lighting-integration-tests_1  | ============================= test session starts ==============================
+lighting-integration-tests_1  | platform linux -- Python 3.8.2, pytest-6.0.1, py-1.9.0, pluggy-0.13.1 -- /usr/bin/python3
+lighting-integration-tests_1  | cachedir: .pytest_cache
+lighting-integration-tests_1  | rootdir: /lighting/integration_tests
+lighting-integration-tests_1  | plugins: bdd-3.3.0
+lighting-integration-tests_1  | collecting ... collected 2 items
+lighting-integration-tests_1  |
+lighting-integration-tests_1  | tests/main.py::test_turn_on_the_lights[lightbulb-1-OFF-on-ON] pytest::before &amp;lt;Function test_turn_on_the_lights[lightbulb-1-OFF-on-ON]&amp;gt;
+lighting-integration-tests_1  | Scenario::before: The lights are controlled
+lighting-integration-tests_1  | create: loop
+lighting-integration-tests_1  | create: awaitables
+lighting-integration-tests_1  | PASSED Step: I have a light with the id &amp;lt;light_id&amp;gt;
+lighting-integration-tests_1  | PASSED Step: the light &amp;lt;light_id&amp;gt; is turned &amp;lt;light_begin_state&amp;gt;ReactiveListener::on_connect Connected with result code 0
+lighting-integration-tests_1  |
+lighting-integration-tests_1  | PASSED Step: I expect the final state of light &amp;lt;light_id&amp;gt; to be &amp;lt;light_final_state&amp;gt;
+lighting-integration-tests_1  | create: simulator
+lighting-integration-tests_1  | LightbulbSimulator::connect_as lightbulb-1 to localhost:1883
+lighting-integration-tests_1  | LightbulbSimulator::on_connect Lightbulb=lightbulb-1 connected
+lighting-integration-tests_1  | LightbulbSimulator::on_message topic=lights/lightbulb-1/state/get payload=b&#39;&#39;
+lighting-integration-tests_1  | LightbulbSimulator::on_message public topic=lights/lightbulb-1/state payload=s_lights_state(newState=&#39;OFF&#39;)
+lighting-integration-tests_1  | ReactiveListener::on_message topic=lights/lightbulb-1/state payload=b&#39;{&amp;quot;newState&amp;quot;: &amp;quot;OFF&amp;quot;}&#39;
+lighting-integration-tests_1  | on_next: s_lights_state(newState=&#39;OFF&#39;)
+lighting-integration-tests_1  | PASSED Step: the lights are connected
+lighting-integration-tests_1  | PASSED Step: I use &amp;lt;light_function&amp;gt; to control the lights
+lighting-integration-tests_1  | Awaiting tasks, count=1
+lighting-integration-tests_1  | start: run_until_complete
+lighting-integration-tests_1  | LightbulbSimulator::on_message topic=lights/lightbulb-1/function/on payload=b&#39;&#39;
+lighting-integration-tests_1  | LightbulbSimulator::on_message public topic=lights/lightbulb-1/state payload=s_lights_state(newState=&#39;ON&#39;)
+lighting-integration-tests_1  | ReactiveListener::on_message topic=lights/lightbulb-1/state payload=b&#39;{&amp;quot;newState&amp;quot;: &amp;quot;ON&amp;quot;}&#39;
+lighting-integration-tests_1  | on_next: s_lights_state(newState=&#39;ON&#39;)
+lighting-integration-tests_1  | on_completed
+lighting-integration-tests_1  | PASSED Step: I await the result
+lighting-integration-tests_1  | PASSEDpytest::after &amp;lt;Function test_turn_on_the_lights[lightbulb-1-OFF-on-ON]&amp;gt;
+lighting-integration-tests_1  | after: awaitables
+lighting-integration-tests_1  |
+lighting-integration-tests_1  | tests/main.py::test_turn_on_the_lights[lightbulb-2-ON-off-OFF] pytest::before &amp;lt;Function test_turn_on_the_lights[lightbulb-2-ON-off-OFF]&amp;gt;
+lighting-integration-tests_1  | Scenario::before: The lights are controlled
+lighting-integration-tests_1  | create: awaitables
+lighting-integration-tests_1  | PASSED Step: I have a light with the id &amp;lt;light_id&amp;gt;
+lighting-integration-tests_1  | PASSED Step: the light &amp;lt;light_id&amp;gt; is turned &amp;lt;light_begin_state&amp;gt;
+lighting-integration-tests_1  | PASSED Step: I expect the final state of light &amp;lt;light_id&amp;gt; to be &amp;lt;light_final_state&amp;gt;
+lighting-integration-tests_1  | create: simulator
+lighting-integration-tests_1  | LightbulbSimulator::connect_as lightbulb-2 to localhost:1883
+lighting-integration-tests_1  | LightbulbSimulator::on_connect Lightbulb=lightbulb-2 connected
+lighting-integration-tests_1  | LightbulbSimulator::on_message topic=lights/lightbulb-2/state/get payload=b&#39;&#39;
+lighting-integration-tests_1  | LightbulbSimulator::on_message public topic=lights/lightbulb-2/state payload=s_lights_state(newState=&#39;ON&#39;)
+lighting-integration-tests_1  | ReactiveListener::on_message topic=lights/lightbulb-2/state payload=b&#39;{&amp;quot;newState&amp;quot;: &amp;quot;ON&amp;quot;}&#39;
+lighting-integration-tests_1  | on_next: s_lights_state(newState=&#39;ON&#39;)
+lighting-integration-tests_1  | PASSED Step: the lights are connected
+lighting-integration-tests_1  | PASSED Step: I use &amp;lt;light_function&amp;gt; to control the lights
+lighting-integration-tests_1  | Awaiting tasks, count=1
+lighting-integration-tests_1  | start: run_until_complete
+lighting-integration-tests_1  | LightbulbSimulator::on_message topic=lights/lightbulb-2/function/off payload=b&#39;&#39;
+lighting-integration-tests_1  | LightbulbSimulator::on_message public topic=lights/lightbulb-2/state payload=s_lights_state(newState=&#39;OFF&#39;)
+lighting-integration-tests_1  | ReactiveListener::on_message topic=lights/lightbulb-2/state payload=b&#39;{&amp;quot;newState&amp;quot;: &amp;quot;OFF&amp;quot;}&#39;
+lighting-integration-tests_1  | on_next: s_lights_state(newState=&#39;OFF&#39;)
+lighting-integration-tests_1  | on_completed
+lighting-integration-tests_1  | PASSED Step: I await the result
+lighting-integration-tests_1  | PASSEDpytest::after &amp;lt;Function test_turn_on_the_lights[lightbulb-2-ON-off-OFF]&amp;gt;
+lighting-integration-tests_1  | after: awaitables
+lighting-integration-tests_1  | exit: loop
+lighting-integration-tests_1  |
+lighting-integration-tests_1  |
+lighting-integration-tests_1  | ============================== 2 passed in 22.08s ==============================
+reactive-testing_lighting-integration-tests_1 exited with code 0
+&lt;/code&gt;&lt;/pre&gt;</description>
+    </item>
+    
+    <item>
+      <title>How to setup docker credential-store</title>
+      <link>https://ovaar.github.io/blog/how-to-setup-docker-credential-store/</link>
+      <pubDate>Tue, 28 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://ovaar.github.io/blog/how-to-setup-docker-credential-store/</guid>
+      <description>&lt;p&gt;Since docker version 19 it start notifying the user that the docker credentials are stored unencrypted.&lt;/p&gt;
+&lt;pre tabindex=&#34;0&#34;&gt;&lt;code&gt;WARNING! Your password will be stored unencrypted …
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;To solve this we will use the Docker &lt;a href=&#34;https://docs.docker.com/engine/reference/commandline/login/#credentials-store&#34;&gt;credential-store&lt;/a&gt; feature.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Ubuntu: &lt;a href=&#34;https://github.com/docker/docker-credential-helpers/releases/latest&#34;&gt;docker-credential-pass&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;OSX: osxkeychain&lt;/li&gt;
+&lt;li&gt;Windows: wincred&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;In this blog post we are going to use install the latest docker-credential-pass helper in combination with pass as a store and gpg for key generation.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;sudo apt-get install -y pass gpg
+gpg2 --gen-key
+&lt;span style=&#34;color:#75715e&#34;&gt;# copy gpg-key&lt;/span&gt;
+pass init &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&amp;lt;gpg-pub-key&amp;gt;&amp;#34;&lt;/span&gt;
+
+sed -i &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;0,/{/s/{/{\n\t&amp;#34;credsStore&amp;#34;: &amp;#34;pass&amp;#34;,/&amp;#39;&lt;/span&gt; ~/.docker/config.json
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;The following one-line will download the latest &lt;code&gt;docker-credential-pass&lt;/code&gt; helper from github and extract it to the &lt;code&gt;~/bin&lt;/code&gt; directory:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;curl -fsSLI -o /dev/null -w %&lt;span style=&#34;color:#f92672&#34;&gt;{&lt;/span&gt;url_effective&lt;span style=&#34;color:#f92672&#34;&gt;}&lt;/span&gt; https://api.github.com/repos/docker/docker-credential-helpers/releases/latest | xargs curl -s | grep -o &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;https.*docker-credential-pass.*tar.gz&amp;#34;&lt;/span&gt; | wget -qi - &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; mkdir -p ~/bin &lt;span style=&#34;color:#f92672&#34;&gt;&amp;amp;&amp;amp;&lt;/span&gt; tar -xvf docker-credential-pass-v*-amd64.tar.gz -C ~/bin
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Finally, login with your docker credentials.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;docker login
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;</description>
+    </item>
+    
+    <item>
+      <title>How to set Linux MAC address</title>
+      <link>https://ovaar.github.io/blog/how-to-set-linux-mac-address/</link>
+      <pubDate>Mon, 27 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://ovaar.github.io/blog/how-to-set-linux-mac-address/</guid>
+      <description>&lt;p&gt;&lt;a href=&#34;https://ovaar.github.io/blog/how-to-create-an-interactive-yocto-shell/&#34;&gt;Last post&lt;/a&gt; I wrote about a embedded device running Linux where a MAC address is stored in the EEPROM. The first six bytes are reserved for the MAC address which (ideally) only should be written once.&lt;/p&gt;
+&lt;p&gt;To apply the MAC address the numbers need to be hexadecimal formatted and separated with a colon(&lt;code&gt;:&lt;/code&gt;) symbol. It is possible to dynamically change the MAC address of Ethernet, beware that you need to be &lt;code&gt;root&lt;/code&gt; and that the ethernet interface is not up.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;ifconfig eth0 hw ether 00:01:02:03:04:05
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Or, you could permanently change the MAC address by setting it into the &lt;code&gt;hwaddress&lt;/code&gt; in the &lt;code&gt;/etc/network/interfaces&lt;/code&gt; configuration file.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;auto eth0
+iface eth0 inet dhcp
+    hwaddress ether 00:01:02:03:04:05
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now we know how and where to set the MAC address. Next, we can read the first six bytes using &lt;code&gt;dd&lt;/code&gt; and pipe it to &lt;code&gt;hexdump&lt;/code&gt;. Fortunately, &lt;a href=&#34;https://www.man7.org/linux/man-pages/man1/hexdump.1.html&#34;&gt;hexdump&lt;/a&gt; already provides API for formatting the input.&lt;/p&gt;
+&lt;p&gt;The &lt;code&gt;-e &#39;1/1&#39; %02x&lt;/code&gt; parameter will format each space followed by a byte into a hexadecimal number with two digits and a leading zero if needed.&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-bash&#34; data-lang=&#34;bash&#34;&gt;DELIMITER&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;:&amp;#34;&lt;/span&gt;
+MAC&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;dd &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;$EEPROM bs&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt; count&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; | hexdump -ve &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;1/1 &amp;#34;%02x&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;$DELIMITER&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;
+echo $MAC &lt;span style=&#34;color:#75715e&#34;&gt;# output 00:01:02:03:04:05:&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Finnaly the trailing colon &lt;code&gt;:&lt;/code&gt; needs to be removed. There are multiple ways to do this&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Pipe the output to &lt;code&gt;sed&lt;/code&gt; and replace the last &lt;code&gt;:&lt;/code&gt; OR&lt;/li&gt;
+&lt;li&gt;Use Bash Substring Expansion to remove the character from a string.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Solution 1:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;MAC&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;dd &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;$EEPROM bs&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt; count&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; | hexdump -ve &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;1/1 &amp;#34;%02x&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;$DELIMITER&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;&amp;#39;&lt;/span&gt; | sed s/:$//g&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Solution 2:&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-shell&#34; data-lang=&#34;shell&#34;&gt;MAC&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;$(&lt;/span&gt;dd &lt;span style=&#34;color:#66d9ef&#34;&gt;if&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;$EEPROM bs&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;6&lt;/span&gt; count&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;1&lt;/span&gt; | hexdump -ve &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;1/1 &amp;#34;%02x&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;$DELIMITER&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;&amp;#34;&amp;#39;&lt;/span&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;)&lt;/span&gt;
+MAC&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;${&lt;/span&gt;MAC:&lt;span style=&#34;color:#66d9ef&#34;&gt;:-&lt;/span&gt;1&lt;span style=&#34;color:#e6db74&#34;&gt;}&lt;/span&gt; &lt;span style=&#34;color:#75715e&#34;&gt;# Remove last character &amp;#39;:&amp;#39;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Personally I prefer solution 2 since I find that &lt;code&gt;sed&lt;/code&gt; harder to read and I often have to explain it to other engineers who are reviewing it. Therefore solution 2 (with a comment) is clearer. If you are a system expert and love one-lines, go for solution 1.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>How to create an interactive Yocto shell</title>
+      <link>https://ovaar.github.io/blog/how-to-create-an-interactive-yocto-shell/</link>
+      <pubDate>Mon, 20 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://ovaar.github.io/blog/how-to-create-an-interactive-yocto-shell/</guid>
+      <description>&lt;p&gt;This post is about a feature request which I have implemented, at time of writing, about 2 years back. It always stuck with me because the project I was doing at the time was my first yocto experience. Topic has its own &lt;a href=&#34;https://github.com/topic-embedded-products/topic-platform&#34;&gt;BSP&lt;/a&gt; for FPGA boards on top of a Linux distribution. A custom board was specifically designed for a customor which would run our software that would interface with another custom low power embedded device.&lt;/p&gt;
+&lt;p&gt;Due to an increasing demand of delivering production ready devices to our customer, delivering actual software features became more and more challenging. Making the devices production ready required some manual steps and was something we did in-house.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Create a bootable SD card with a yocto image containing an &lt;a href=&#34;https://github.com/sbabic/swupdate&#34;&gt;swupdate&lt;/a&gt; package&lt;/li&gt;
+&lt;li&gt;Erase NOR-flash&lt;/li&gt;
+&lt;li&gt;Run swupdate and select the right boot partition&lt;/li&gt;
+&lt;li&gt;Erase EEPROM&lt;/li&gt;
+&lt;li&gt;Write MAC address to EEPROM&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;This turned out to be error sensitive process. So I decided to create a script which restricts the user input and does validation on the MAC address. Also it could flash the swupdate package, erase flash, write to EEPROM, erase the EEPROM and would prompt the user to select the boot partition to write the swupdate package to. Now I had the script, but still I needed to enter user credentials every time I booted from the SD-card. Would it not be great to bypass the getty login prompt and then run the script interactively 🤓!&lt;/p&gt;
+&lt;p&gt;Enough talk, lets dive in&amp;hellip;.&lt;/p&gt;
+&lt;p&gt;Bitbake allows for running code after succesfully building the root filesystem. The &lt;code&gt;ROOTFS_POSTPROCESS_COMMAND&lt;/code&gt; allowed to edit the getty systemd service files using &lt;a href=&#34;https://www.gnu.org/software/sed/manual/sed.html&#34;&gt;sed&lt;/a&gt;. Most importantly if you would open &lt;code&gt;console-getty.service&lt;/code&gt; it runs &lt;code&gt;agetty&lt;/code&gt; on the terminal in order to prompt for the user login. That not what I wanted, so I replaced it with &lt;code&gt;stty&lt;/code&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;console-getty.service&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;[Unit]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;Console Getty&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;After&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;systemd-user-sessions.service plymouth-quit-wait.service&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Before&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;getty.target&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;[Service]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;ExecStart&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;-/sbin/agetty --noclear --keep-baud console 115200,38400,9600 $TERM&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;idle&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Restart&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;always&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;RestartSec&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;0&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;UtmpIdentifier&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;cons&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;TTYPath&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/dev/console&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;TTYReset&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;yes&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;TTYVHangup&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;yes&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;KillMode&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;process&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;IgnoreSIGPIPE&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;no&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;SendSIGHUP&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;yes&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;[Install]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;WantedBy&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;getty.target&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;&lt;code&gt;interactive.bb&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-py&#34; data-lang=&#34;py&#34;&gt;GETTY_SYSTEMD_SERVICES &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;?&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34; &lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    $&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{IMAGE_ROOTFS}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;$&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{systemd_system_unitdir}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/serial-getty@.service &lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    $&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{IMAGE_ROOTFS}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;$&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{systemd_system_unitdir}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/console-getty.service &lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    $&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{IMAGE_ROOTFS}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;$&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{systemd_system_unitdir}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/getty@.service &lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;    $&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{IMAGE_ROOTFS}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;$&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;{systemd_system_unitdir}&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/container-getty@.service &lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;\
+&lt;/span&gt;&lt;span style=&#34;color:#ae81ff&#34;&gt;&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;&lt;/span&gt;
+&lt;span style=&#34;color:#75715e&#34;&gt;# Replace agetty, which prompts for a user login&lt;/span&gt;
+&lt;span style=&#34;color:#75715e&#34;&gt;# with stty. Than disable tty reset and hangup to&lt;/span&gt;
+&lt;span style=&#34;color:#75715e&#34;&gt;# continue the user input stream.&lt;/span&gt;
+disable_login_prompt () {
+    sed &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;i &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/^\(ExecStart *=\(.*\)$\)/ExecStart=-\/bin\/stty -F \/dev\/ttyPS0 115200 cs8 sane /&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;$&lt;/span&gt;{GETTY_SYSTEMD_SERVICES}
+    sed &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;i &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/^\(TTYVHangup=yes$\)/TTYVHangup=no/&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;$&lt;/span&gt;{GETTY_SYSTEMD_SERVICES}
+    sed &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;i &lt;span style=&#34;color:#f92672&#34;&gt;-&lt;/span&gt;e &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#39;s/^\(TTYReset=yes$\)/TTYReset=no/&amp;#39;&lt;/span&gt; &lt;span style=&#34;color:#960050;background-color:#1e0010&#34;&gt;$&lt;/span&gt;{GETTY_SYSTEMD_SERVICES}
+}
+
+ROOTFS_POSTPROCESS_COMMAND &lt;span style=&#34;color:#f92672&#34;&gt;+=&lt;/span&gt; &lt;span style=&#34;color:#e6db74&#34;&gt;&amp;#34;disable_login_prompt;&amp;#34;&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Next create a systemd service which runs after getty has started which to execute the interactive script.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;interactive.service&lt;/code&gt;&lt;/p&gt;
+&lt;div class=&#34;highlight&#34;&gt;&lt;pre tabindex=&#34;0&#34; style=&#34;color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4&#34;&gt;&lt;code class=&#34;language-ini&#34; data-lang=&#34;ini&#34;&gt;&lt;span style=&#34;color:#66d9ef&#34;&gt;[Unit]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Description&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;Interactive installation script that runs at startup.&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;After&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;getty.target multi-user.target&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;[Service]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;Type&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;oneshot&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;RemainAfterExit&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;yes&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;ExecStart&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;/home/root/run-interactive-script&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;StandardInput&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;tty-force&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;StandardOutput&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;inherit&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;StandardError&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;inherit&lt;/span&gt;
+
+&lt;span style=&#34;color:#66d9ef&#34;&gt;[Install]&lt;/span&gt;
+&lt;span style=&#34;color:#a6e22e&#34;&gt;WantedBy&lt;/span&gt;&lt;span style=&#34;color:#f92672&#34;&gt;=&lt;/span&gt;&lt;span style=&#34;color:#e6db74&#34;&gt;multi-user.target&lt;/span&gt;
+&lt;/code&gt;&lt;/pre&gt;&lt;/div&gt;&lt;p&gt;Now you can boot your system without an user login promp but still access all features of your BSP running Linux.&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>First Post</title>
+      <link>https://ovaar.github.io/blog/first-post/</link>
+      <pubDate>Fri, 17 Jul 2020 00:00:00 +0000</pubDate>
+      
+      <guid>https://ovaar.github.io/blog/first-post/</guid>
+      <description>&lt;p&gt;After a long time thinking whether I would or should start a blog, I finally have! As a dyslectic software engineer this is exciting for me because writing and reading is not easy for me. (Spoiler) Some very critical readers will find flaws in my writing, I am sure about that 😇.&lt;/p&gt;
+&lt;p&gt;&lt;img src=&#34;https://media.giphy.com/media/13GIgrGdslD9oQ/giphy.gif&#34; alt=&#34;jim carry typing&#34;&gt;&lt;/p&gt;
+&lt;p&gt;The reason I have started this blog is to write about my best achievements, creative solutions to problems me and my colleagues have come up with over time, to inspire others about software engineering, to reflect about my professional career but also to improve my technical writing skills.&lt;/p&gt;
+&lt;p&gt;If you are still interested, continue reading&amp;hellip;
+I will give a short introduction about myself, my name is Thomas Reynders I am a enthusiastic software engineer. I live and work in the Dutch Silicon Valley area: Eindhoven. Since I was just a little kid I have been interested in technology. My dad worked at Philips and always had some hardware such as radios laying around which I could take apart. While video games got me hooked to playing with computers I always have felt a relation to hardware. It intrigues me and it has some kind of magical about it. My technical interest are in the IoT and high speed data processing domain. Working with embedded devices or big machines is awesome because making a product come to life and seeing things come together is super satisfying! (I think allot of engineers can relate to this 😁). In my free time I like to work in the garden, working on personal projects such as the smart mirror &amp;ldquo;&lt;a href=&#34;https://github.com/ovaar/mirrorm8/tree/dev&#34;&gt;mirrorm8&lt;/a&gt;&amp;rdquo; and doing sports such as running and cycling.&lt;/p&gt;
+&lt;p&gt;To finish my first post I would like to thank &lt;a href=&#34;https://github.com/andybrewer&#34;&gt;andybrewer&lt;/a&gt; for building &lt;a href=&#34;https://andybrewer.github.io/mvp/&#34;&gt;MVP.css&lt;/a&gt; and &lt;a href=&#34;https://github.com/andybrewer&#34;&gt;embik&lt;/a&gt; for building a Hugo &lt;a href=&#34;https://github.com/embik/hugo-theme-lyla.git&#34;&gt;theme&lt;/a&gt; 👍.&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
+
