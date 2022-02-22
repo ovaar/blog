@@ -1,6 +1,5 @@
 +++
-date = "2021-12-15"
-publishDate = "2021-12-15"
+date = "2022-02-22"
 title = "How a smart mirror project finished after years of work"
 type = "post"
 categories = ["Development"]
