@@ -36,6 +36,8 @@ if __name__ == "__main__":
         func(*bound_arguments.args, **bound_arguments.kwargs)
     except TypeError as e: # throws params mismatched
         raise e
+    else:
+        func(*args, **kwargs)
 ```
 
 Lets break the example down.
