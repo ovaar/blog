@@ -1,12 +1,12 @@
 +++
 date = "2024-04-22"
-title = "How to python command line arguments"
+title = "How to typed command line arguments in python"
 type = "post"
 categories = ["Development"]
 tags = ["Development", "python"]
 +++
 
-# How to python command line arguments
+# How to typed command line arguments in python
 
 Creating tools with python is a common practice due to its ease of use and productivity. Now python already has good built-in support for parsing command-line arguments, but we can take it one step further. 
 

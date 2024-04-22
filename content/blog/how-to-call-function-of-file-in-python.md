@@ -1,12 +1,12 @@
 +++
 date = "2023-11-17"
-title = "How to call a function of a file"
+title = "How to call a function of a file in python"
 type = "post"
 categories = ["Development"]
 tags = ["Development", "python"]
 +++
 
-# How to call a function of a file
+# How to call a function of a file in python
 
 Take the following use case, where I have a script that I use in my Continues Integration (CI) pipeline and I would like to call a function in that file from the command-line with parameters.
 
