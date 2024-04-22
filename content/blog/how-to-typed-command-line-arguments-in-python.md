@@ -24,10 +24,10 @@ Platform independent build script.
 """
 
 import argparse
-from pathlib import Path
-from typing import Final
 import errno
 import os
+from pathlib import Path
+from typing import Final
 
 try:
     from enum import StrEnum
@@ -82,7 +82,7 @@ parser.add_argument(
     "--path",
     dest="path",
     type=to_path,
-    help=f"The solution file path (optional, default={str(DEFAULT_SOLUTION_PATH)})."
+    help=f"The solution file path (optional, default={str(DEFAULT_SOLUTION_PATH)}).",
 )
 
 args = parser.parse_args()
@@ -90,6 +90,7 @@ build_type: BuildType = args.build_type
 solution_path: Path = args.path if args.path else DEFAULT_SOLUTION_PATH
 
 main(solution_path, build_type, args.rebuild)
+
 ```
 
 ```sh
