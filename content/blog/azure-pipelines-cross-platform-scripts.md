@@ -8,7 +8,7 @@ tags = ["Devops", "Azure Devops"]
 
 # Azure pipelines cross-platform scripts
 
-To keep things simple when setting up a CI/CD pipeline for a cross-platform application we cautiously have to consider our options for running the steps in what scripting language, because we don't want to end up with script that end up doing the same thing, but are for different platforms, which means extra maintenance and complexity for the maintainers.
+To keep things simple when setting up a CI/CD pipeline for a cross-platform application we cautiously have to consider our options for running the steps in what scripting language, because we don't want to end up with scripts that do the same thing functionally, but are different for each platform, which means extra maintenance and complexity for the maintainers.
 
 So we have to consider languages like Powershell, Bash, Zsh or Python for to run on Windows, macOS and Linux. 
 
