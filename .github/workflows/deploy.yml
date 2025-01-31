@@ -6,9 +6,6 @@ on:
       - master  # Adjust if your default branch is different
   workflow_dispatch:  # Allows manual triggering
 
-env:
-  GH_PAT: ${{ secrets.GH_PAT }}
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
