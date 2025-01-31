@@ -30,4 +30,7 @@ jobs:
         run: docker compose up blog
       
       - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          repository: public
+
         
