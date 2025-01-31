@@ -25,7 +25,7 @@ jobs:
         run: |
           git submodule foreach --recursive git clean -ffdx
           git submodule foreach --recursive git reset --hard
-          git submodule foreach --recursive git pull
+          git submodule foreach --recursive git checkout -f master
 
       - name: Run docker compose
         run: docker compose up blog
