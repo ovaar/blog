@@ -19,6 +19,7 @@ jobs:
         with:
           submodules: true  # Ensures submodules are initialized and updated
           fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
 
       - name: Set execute permissions for deploy script
         run: chmod +x ./scripts/deploy.sh
