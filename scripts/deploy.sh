@@ -21,7 +21,7 @@ git commit -m "$msg"
 
 # Push source and build repos.
 git remote -v
-git push origin master
+git push origin
 
 popd
-git submodule foreach git push origin master
+git push origin
