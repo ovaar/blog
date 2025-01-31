@@ -1,3 +1,12 @@
++++
+date = "2025-01-31"
+title = "Azure pipelines - ctypes importerror"
+type = "post"
+categories = ["Devops"]
+tags = ["Devops", "Azure Devops"]
++++
+
+
 # Fixing `ctypes` ImportError in Azure Pipelines: Missing `_type_` Attribute
 
 When running `pip install` in an Azure Pipelines self-hosted agent, you might encounter the following error:
