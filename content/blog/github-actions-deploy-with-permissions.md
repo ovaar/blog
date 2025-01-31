@@ -1,10 +1,10 @@
----
-title: "Deploying a Blog with GitHub Actions, Docker, and Submodules"
-date: "2025-01-31"
-description: "A step-by-step guide to deploying a static blog using GitHub Actions, Docker, and submodules."
-categories: [DevOps, GitHub Actions, Docker]
-tags: [GitHub Actions, CI/CD, Docker, Submodules]
----
++++
+title ="Deploying a Blog with GitHub Actions, Docker, and Submodules"
+date = "2025-01-31"
+description = "A step-by-step guide to deploying a static blog using GitHub Actions, Docker, and submodules."
+categories = [DevOps, GitHub Actions, Docker]
+tags = [GitHub Actions, CI/CD, Docker, Submodules]
++++
 
 ## 🚀 Deploying a Blog with GitHub Actions, Docker, and Submodules
 
