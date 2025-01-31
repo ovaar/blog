@@ -19,7 +19,7 @@ jobs:
 
       - name: Set execute permissions for deploy script
         run: chmod +x ./scripts/deploy.sh
-      
+
       - name: Set git user configuration
         run: |
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
