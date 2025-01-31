@@ -33,7 +33,7 @@ A typical Python installation on Windows consists of:
 
 - `python.exe` in `<PYTHON_ROOT>`.
 - Standard libraries in `<PYTHON_ROOT>\Lib`.
-- **DLLs (such as **``**, **``**) in **``**.**
+- DLLs (such as `_ctypes.pyd`, `_queue.pyd`) in `<PYTHON_ROOT>\DLLs`
 
 Before Python 3.8, Windows would automatically find these DLLs when needed. However, since **Python 3.8**, Microsoft tightened security, and Python now explicitly controls how DLLs are loaded using [`os.add_dll_directory()`](https://docs.python.org/3/library/os.html#os.add_dll_directory).
 
@@ -42,7 +42,7 @@ Before Python 3.8, Windows would automatically find these DLLs when needed. Howe
 - When you run `python.exe` manually, your user session **automatically resolves** the `DLLs` directory.
 - When the Azure Pipelines agent runs Python, it **starts in a minimal environment**, and Windows **does not find the required DLLs** unless they are explicitly referenced.
 
-### **3. Why **``** Fails**
+### **3. Why pip Fails**
 
 The `ctypes` module relies on system DLLs to function. Since the Python DLLs directory is not in `PATH`, Windows fails to load necessary components, resulting in:
 
@@ -54,7 +54,7 @@ AttributeError: class must define a '_type_' attribute
 
 ## ✅ **How to Fix It**
 
-To ensure the agent can find the DLLs, **prepend the **``** directory to **`` in the pipeline:
+To ensure the agent can find the DLLs, **prepend the `DLLs` directory** to the PATH in the pipeline:
 
 ```yaml
 steps:
@@ -73,8 +73,7 @@ This tells Windows to search Python’s `DLLs` directory when loading system dep
 Here’s a minimal example including `UsePythonVersion@0` to ensure the correct Python version is used:
 
 ```yaml
-trigger:
-- main
+trigger: main
 
 pool:
   name: Self-Hosted-Agent-Pool
