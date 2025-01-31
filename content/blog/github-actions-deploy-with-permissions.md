@@ -39,6 +39,7 @@ GitHub’s default `GITHUB_TOKEN` **cannot push** to repositories requiring extr
 - Click **New repository secret**
 - Name it **`GH_PAT`**
 - Paste the copied token
+- Repeat steps for each submodule repository that requires access.
 
 ---
 
@@ -64,57 +65,28 @@ jobs:
         with:
           submodules: true  # Ensures submodules are initialized and updated
           fetch-depth: 0
-          token: ${{ secrets.GH_PAT }}  # 🔥 Ensures submodules use PAT
+          token: ${{ secrets.GH_PAT }} # 🔥 Ensures submodules use PAT
 
-      - name: Set execute permissions for deploy script
-        run: chmod +x ./scripts/deploy.sh
+      - name: Submodule cleanup fix  # Bodge for https://github.com/actions/checkout/issues/358
+        run: |
+          git submodule foreach --recursive git clean -ffdx
+          git submodule foreach --recursive git reset --hard
+          git submodule foreach --recursive git checkout -f master
 
-      - name: Run Deploy Script
-        run: ./scripts/deploy.sh
-        env:
-          GH_PAT: ${{ secrets.GH_PAT }}
+      - name: Run docker compose
+        run: docker compose up blog
+      
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          repository: public
+          branch: master # Adjust if needed
+          push_options: --force
+          create_branch: false
 ```
 
 ---
 
-## ✅ Step 3: Update the `deploy.sh` Script
-Modify `scripts/deploy.sh` to **properly authenticate Git** before pushing:
-
-```sh
-#!/bin/sh
-
-# If a command fails then the deploy stops
-set -e
-
-printf "\033[0;32mDeploying updates to GitHub...\033[0m\n"
-
-# Set up Git user
-git config --global user.email "github-actions[bot]@users.noreply.github.com"
-git config --global user.name "github-actions[bot]"
-
-# Update submodule URL to use authentication
-git submodule foreach --recursive git remote set-url origin https://x-access-token:${GH_PAT}@github.com/ovaar/ovaar.github.io.git
-
-git submodule update --init --recursive
-
-# Build the project.
-docker-compose up blog  # Adjust if needed
-
-# Commit and push main repo
-git add .
-git commit -m "Updating site $(date)"
-git push origin master
-
-# Push submodule changes
-cd public
-git add .
-git commit -m "Deploying blog update $(date)"
-git push origin master
-```
-
----
-
-## ✅ Step 4: Push and Test
+## ✅ Step 3: Push and Test
 1. **Commit and push changes**
    ```sh
    git add .
