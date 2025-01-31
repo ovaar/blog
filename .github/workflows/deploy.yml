@@ -21,9 +21,9 @@ jobs:
         run: chmod +x ./scripts/deploy.sh
       
       - name: Set git user configuration
-        run: >
-          git config user.name github-actions
-          git config user.email github-actions@github.com
+        run: |
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config --global user.name "github-actions[bot]"
 
       - name: Run deploy script
         run: ./scripts/deploy.sh
