@@ -18,6 +18,7 @@ if [ -n "$*" ]; then
 	msg="$*"
 fi
 git commit -m "$msg"
+git log
 
 # Push source and build repos.
 git remote -v
