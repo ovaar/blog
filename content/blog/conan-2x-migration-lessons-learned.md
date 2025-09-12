@@ -69,7 +69,7 @@ Let's break down the three layers (RREV → Package ID → PREV), starting with 
 pkg_name/version#rrev:package_id#prev
 ```
 
-![conan 2.x list revisions](../../assets/img/conan2x-list-revisions.png)
+![Screenshot showing Conan 2.x list revisions output]({{< imgpath "conan2x-list-revisions.png" >}})
 
 ### 1.3.1. Recipe Revisions (RREV)
 
@@ -86,7 +86,7 @@ The [package_id](https://docs.conan.io/2/reference/binary_model/package_id.html)
 
 You can still customize how variants collapse by overriding the `package_id()` method in a recipe—for example to ignore a compiler patch level—mirroring (and simplifying) behavior from Conan 1.x.
 
-![Conan package id](../../assets/img/conan_package_id_full.png)
+![Screenshot showing Conan 2.x list output with package ids]({{< imgpath "conan_package_id_full.png" >}})
 
 ```
 pkg_name/version#rrev:package_id
