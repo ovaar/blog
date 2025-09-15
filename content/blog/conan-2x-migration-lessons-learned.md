@@ -153,7 +153,7 @@ zstd/1.5.7
         explanation: This binary belongs to another OS or Architecture, highly incompatible.
 ```
 
-There is quite allot of information in this output, but the way I read it is as following: "Unable to find exact matching package for the given profile, though the closest match was this 'Windows' package". So my first instinct was to run `conan list` to find out what packages we now have in our remote, telling that there are indeed packages for `zstd/1.5.7` for Windows and macOS, but that package for macOS has a different package_id then the one for Windows.
+There is quite allot of information in this output, but the way I read it is as following: "Unable to find exact matching package for the given profile, though the closest match was this 'Windows' package". So my first instinct was to run `conan list` to find out what packages we now have in our remote, telling that there are indeed packages for `zstd/1.5.7` for Windows and macOS, but that package for macOS has a different RREV (recipe revision) then the one for Windows.
 
 ```bash
 $ conan list "zstd/1.5.7:*" -r=remote
