@@ -14,7 +14,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          submodules: true  # Ensures submodules are initialized and updated
+          submodules: recursive  # Ensures submodules are initialized and updated
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
 
@@ -22,12 +22,6 @@ jobs:
         run: |
           echo "UID=$(id -u)" >> $GITHUB_ENV
           echo "GID=$(id -g)" >> $GITHUB_ENV
-
-      - name: Submodule cleanup fix  # Bodge for https://github.com/actions/checkout/issues/358
-        run: |
-          git submodule foreach --recursive git clean -ffdx
-          git submodule foreach --recursive git reset --hard
-          git submodule foreach --recursive git checkout -f master
 
       - name: Run docker compose
         run: |
