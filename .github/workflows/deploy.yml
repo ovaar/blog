@@ -23,6 +23,12 @@ jobs:
           echo "UID=$(id -u)" >> $GITHUB_ENV
           echo "GID=$(id -g)" >> $GITHUB_ENV
 
+      - name: Prepare Hugo cache directory
+        run: |
+          mkdir -p "${{ runner.temp }}/hugo_cache"
+          # Show ownership (should match the runner user so container user UID:GID can write)
+          ls -ld "${{ runner.temp }}/hugo_cache"
+
       - name: Run docker compose
         run: |
           docker compose run --rm \
