@@ -2,6 +2,13 @@
 services:
   blog:
     image: ghcr.io/gohugoio/hugo:v0.151.0
+    # Run container with the invoking user's UID and GID to avoid permission issues
+    # Define LOCAL_UID / LOCAL_GID in your environment (or GitHub Action step) to override.
+    # Falls back to 1000:1000 which is the typical first Linux user.
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      - LOCAL_UID=${LOCAL_UID:-1000}
+      - LOCAL_GID=${LOCAL_GID:-1000}
     volumes:
       - ./:/project
 
@@ -9,6 +16,10 @@ services:
     image: ghcr.io/gohugoio/hugo:v0.151.0
     #bind is inside the container, so this still will only have localhost:1313 listen on the host
     command: serve  --port 1313 --bind 0.0.0.0 --disableFastRender 
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    environment:
+      - LOCAL_UID=${LOCAL_UID:-1000}
+      - LOCAL_GID=${LOCAL_GID:-1000}
     volumes:
       - ./:/project
       - ~/hugo_cache:/cache
