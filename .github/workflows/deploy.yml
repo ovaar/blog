@@ -25,7 +25,7 @@ jobs:
           git submodule foreach --recursive git checkout -f master
 
       - name: Run docker compose
-        run: docker compose up blog
+        run: docker compose run --rm blog
       
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
