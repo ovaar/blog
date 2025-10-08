@@ -3,7 +3,7 @@ date = "2024-08-01"
 title = "Azure pipelines cross-platform python scripting"
 type = "post"
 categories = ["Devops"]
-tags = ["Devops", "Azure Devops"]
+tags = ["devops", "azure"]
 +++
 
 # Azure pipelines cross-platform python scripting

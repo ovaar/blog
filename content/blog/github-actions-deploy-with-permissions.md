@@ -4,7 +4,7 @@ title = "Deploying a Blog with GitHub Actions, Docker, and Submodules"
 description = "A step-by-step guide to deploying a static blog using GitHub Actions, Docker, and submodules."
 type = "post"
 categories = ["DevOps", "GitHub Actions", "Docker"]
-tags = ["GitHub Actions", "CI/CD, Docker", "Submodules"]
+tags = ["github", "devops", "docker", "git"]
 +++
 
 ## 🚀 Deploying a Blog with GitHub Actions, Docker, and Submodules

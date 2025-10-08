@@ -3,7 +3,7 @@ date = "2023-11-17"
 title = "How to call a function of a file in python"
 type = "post"
 categories = ["Development"]
-tags = ["Development", "python"]
+tags = ["python"]
 +++
 
 # How to call a function of a file in python

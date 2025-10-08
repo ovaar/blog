@@ -3,7 +3,7 @@ date = "2022-02-22"
 title = "How a smart mirror project finished after years of work"
 type = "post"
 categories = ["Development"]
-tags = ["Development", "DIY"]
+tags = ["vuejs", "DIY"]
 +++
 
 ## Introduction

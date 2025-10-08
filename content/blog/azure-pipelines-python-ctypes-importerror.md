@@ -3,7 +3,7 @@ date = "2025-01-31"
 title = "Azure pipelines - ctypes importerror"
 type = "post"
 categories = ["Devops"]
-tags = ["Devops", "Azure Devops"]
+tags = ["devops", "python"]
 +++
 
 

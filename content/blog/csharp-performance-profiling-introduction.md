@@ -3,7 +3,7 @@ date = "2020-10-14"
 title = "C# Performance - Profiling introduction"
 type = "post"
 categories = ["Development", "Performance"]
-tags = ["C#", "performance"]
+tags = ["csharp", "perf"]
 +++
 
 Welcome! In this blog series I will share some of the knowledge I gained when doing performance optimizations for a project some time ago. Optimizing code for performance requires good knowledge of the fundamental concepts of computer architecture. In this first blog post I will explain about software profiling, some of the computer architecture concepts and my personal experience what worked for my and what did not. In later post(s) I will go more into detail in how to optimize code for performance.

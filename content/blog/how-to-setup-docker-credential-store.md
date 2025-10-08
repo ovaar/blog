@@ -4,7 +4,7 @@ publishDate = "2020-07-28"
 title = "How to setup docker credential-store"
 type = "post"
 categories = ["Development", "Devops"]
-tags = ["Development", "Devops", "Docker"]
+tags = ["devops", "docker"]
 +++
 
 Since docker version 19 it start notifying the user that the docker credentials are stored unencrypted.

@@ -3,7 +3,7 @@ date = "2020-07-27"
 title = "How to set Linux MAC address"
 type = "post"
 categories = ["Development", "Linux"]
-tags = ["Development", "Linux", "shell"]
+tags = ["linux", "yocto"]
 +++
 
 [Last post](/blog/how-to-create-an-interactive-yocto-shell/) I wrote about a embedded device running Linux where a MAC address is stored in the EEPROM. The first six bytes are reserved for the MAC address which (ideally) only should be written once.

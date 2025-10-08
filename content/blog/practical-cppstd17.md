@@ -3,7 +3,7 @@ date = "2023-03-06"
 title = "Practical cppstd 17 highlights by example"
 type = "post"
 categories = ["Development"]
-tags = ["Development", "C++"]
+tags = ["cpp"]
 +++
 
 # Practical cppstd 17 highlights by example

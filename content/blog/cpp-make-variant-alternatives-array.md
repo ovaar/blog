@@ -3,7 +3,7 @@ date = "2023-03-02"
 title = "Create an array of all possible variants alternatives of std::variant type"
 type = "post"
 categories = ["Development"]
-tags = ["Development", "C++"]
+tags = ["cpp"]
 +++
 
 The standard library [std::variant](https://en.cppreference.com/w/cpp/utility/variant) is a usefull feature, introduced since c++17, to define a type that can hold multiple alternative types. 

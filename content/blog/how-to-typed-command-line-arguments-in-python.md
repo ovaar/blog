@@ -3,7 +3,7 @@ date = "2024-04-22"
 title = "How to typed command line arguments in python"
 type = "post"
 categories = ["Development"]
-tags = ["Development", "python"]
+tags = ["python"]
 +++
 
 # How to typed command line arguments in python

@@ -3,7 +3,7 @@ date = "2022-11-25"
 title = "How to build Macos Universal Binaries with Conan and CMake"
 type = "post"
 categories = ["Development"]
-tags = ["Development", "CMake", "Conan", "Macos"]
+tags = ["conan", "cmake"]
 +++
 
 *** update (May 2025) ***
