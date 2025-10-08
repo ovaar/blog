@@ -1,0 +1,28 @@
+<head>
+  <meta charset="utf-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  {{ if .Params.NoIndex }}<meta name="robots" content="noindex" />{{ end }}
+  <meta name="author" content="{{ .Site.Params.Author }}" />
+  {{ if .Params.Tagline }}
+  <meta name="description" content="{{ .Params.Tagline }}" />
+  {{ else }}
+  <meta name="description" content="{{ .Site.Params.Description }}" />
+  {{ end }}
+  <title>
+    {{ if .IsHome }}
+      {{ .Site.Title }}
+    {{ else }}
+      {{ .Title }} - {{ .Site.Title }}
+    {{ end }}
+  </title>
+  {{ $mvp := resources.Get "mvp.css" }} 
+  {{ $custom := resources.Get "custom.css" }}
+  {{ $syntax := resources.Get "syntax.css" }}
+  {{ $themeToggle := resources.Get "theme-toggle.css" }}
+  {{ $css := slice $mvp $custom $syntax $themeToggle | resources.Concat "css/stylesheet.css" | minify }}
+  <link rel="stylesheet" href="{{ $css.RelPermalink }}" />
+  <link href="{{ with .OutputFormats.Get "RSS" }}{{ .RelPermalink }}{{ end }}" rel="feed" type="application/rss+xml" title="{{ .Site.Title }}">
+  {{ $themeJs := resources.Get "theme-toggle.js" | minify }}
+  <script src="{{ $themeJs.RelPermalink }}"></script>
+</head>

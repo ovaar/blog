@@ -1,0 +1,19 @@
+<footer>
+  <hr />
+  <div class="footer-content">
+    <div class="footer-info">
+      {{ if .Site.Copyright }}
+      <p><small>Copyright &#169; {{ .Site.Copyright }}</small></p>
+      <p>
+        <small
+          >created with <a href="https://gohugo.io">Hugo</a>,
+          <a href="https://github.com/andybrewer/mvp">mvp.css</a>.
+        </small>
+      </p>
+      {{ end }}
+    </div>
+    <div class="footer-social">
+      {{- partial "social.html" . -}}
+    </div>
+  </div>
+</footer>

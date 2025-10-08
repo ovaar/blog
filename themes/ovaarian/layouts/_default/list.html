@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+    {{- partial "head.html" . -}}
+    <body>
+      {{ $paginate := .Paginate (where .Site.RegularPages ".Params.type" "=" "post") 5 }}
+      <header>
+        {{- partial "header.html" . -}}
+        <h1>Blog Posts</h1>
+        {{ if gt $paginate.PageNumber 1 }}
+        <p>Page {{ $paginate.PageNumber }}</p>
+        {{ end }}
+        {{ if gt $paginate.TotalPages 1 }}
+        <nav class="list-nav">
+          {{ if $paginate.HasPrev }}
+          <a href="{{ $paginate.Prev.URL }}">prev. page</a>
+          {{ end }}
+          {{ if $paginate.HasNext }}
+          <a href="{{ $paginate.Next.URL }}">next page</a>
+          {{ end }}
+        </nav>
+        {{ end }}
+      </header>
+      <main>
+        {{ range $index, $page := $paginate.Pages }}
+        <article>
+          <a href="{{ .Permalink }}">
+            <h3>{{ .Title }}</h3>
+          </a>
+          <p>{{ .Summary }}</p>
+          <p>
+            <small>published on {{ .Date.Format "Mon, 02 Jan 2006" }}</small>
+          </p>
+        </article>
+        {{ end }}
+      </main>
+      <footer>
+        {{- partial "footer.html" . -}}
+      </footer>
+    </body>
+</html>

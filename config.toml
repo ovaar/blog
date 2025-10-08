@@ -1,7 +1,7 @@
 baseURL = "https://ovaar.github.io/"
 title = "Ovaar - Software engineering blog"
 copyright = "2020 Ovaar. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License."
-theme = "lyla"
+theme = "ovaarian"
 
 enableEmoji=true
 enableRobotsTXT = true

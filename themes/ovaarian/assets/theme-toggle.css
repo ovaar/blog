@@ -1,0 +1,68 @@
+/* Theme toggle styling */
+.theme-toggle {
+  background-color: transparent;
+  border: none;
+  color: var(--color-link);
+  cursor: pointer;
+  padding: 0;
+  margin-left: 1rem;
+  font-size: 1.2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle:hover {
+  filter: brightness(var(--hover-brightness));
+}
+
+.theme-toggle:focus {
+  outline: none;
+}
+
+/* We're using MVP.css media query for dark mode colors instead of defining them here */
+
+/* Theme icons */
+.light-icon, .dark-icon, .system-icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Hide/show icons based on color mode */
+[color-mode="dark"] .light-icon,
+[color-mode="light"] .dark-icon,
+[color-mode="dark"] .system-icon,
+[color-mode="light"] .system-icon {
+  display: none;
+}
+
+/* Only show the appropriate icon based on current theme */
+[color-mode="dark"] .dark-icon {
+  display: block;
+}
+
+[color-mode="light"] .light-icon {
+  display: block;
+}
+
+/* Legacy support for system preference if still using 'user' */
+@media (prefers-color-scheme: dark) {
+  [color-mode="user"] .light-icon {
+    display: none;
+  }
+}
+
+@media (prefers-color-scheme: light) {
+  [color-mode="user"] .dark-icon {
+    display: none;
+  }
+}
+
+/* Animation when switching themes */
+.theme-toggle svg {
+  transition: transform 0.3s ease;
+}
+
+.theme-toggle:active svg {
+  transform: scale(0.8);
+}

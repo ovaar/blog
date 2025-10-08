@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html>
+  {{- partial "head.html" . -}}
+  <body>
+    <header>
+      {{- partial "header.html" . -}}
+      <h1>{{ .Title }}</h1>
+      <p>
+        <small>published on {{ .Date.Format "Mon, 02 Jan 2006" }}</small>
+      </p>
+    </header>
+    <hr />
+    <main>
+      {{- partial "tags.html" . -}}
+      <article class="content">{{ .Content | safeHTML }}</article>
+    </main>
+    <footer>{{- partial "footer.html" . -}}</footer>
+  </body>
+</html>

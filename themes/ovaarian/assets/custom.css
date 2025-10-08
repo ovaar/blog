@@ -1,0 +1,162 @@
+/* Custom styles for Lyla theme */
+
+/* Social media links */
+.social {
+    display: flex;
+    gap: 1rem;
+    margin: 1rem 0;
+}
+
+.social a {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    background-color: var(--color-accent);
+    border-radius: var(--border-radius);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background-color 0.2s;
+}
+
+.social a::first-letter {
+    text-transform: uppercase;
+}
+
+.social a:hover {
+    background-color: var(--color-bg-secondary);
+}
+
+/* Footer styling */
+.footer-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.footer-info {
+    flex: 1;
+    min-width: 200px;
+}
+
+.footer-social {
+    display: flex;
+    justify-content: flex-end;
+}
+
+@media (max-width: 600px) {
+    .footer-content {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .footer-social {
+        justify-content: flex-start;
+        width: 100%;
+    }
+}
+
+/* Two-column layout */
+main {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2rem;
+    margin: 0 auto;
+    max-width: var(--width-content);
+}
+
+.main-content {
+    flex: 7; /* Takes 70% of available space */
+    padding-right: 2rem;
+    min-width: 300px; /* Ensures readability on smaller screens */
+}
+
+.sidebar {
+    flex: 3; /* Takes 30% of available space */
+    padding: 1rem;
+    border-radius: var(--border-radius);
+    min-width: 250px; /* Minimum width for the sidebar */
+}
+/* Tag styling */
+.tag-cloud {
+    margin-bottom: 2rem;
+}
+
+.tag-cloud h3 {
+    margin-top: 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--color-bg-secondary);
+}
+
+.tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+}
+
+.tag {
+    display: inline-block;
+    background-color: var(--color-accent);
+    border-radius: var(--border-radius);
+    padding: 0.2rem 0.5rem;
+    margin: 0.2rem;
+    text-decoration: none;
+    font-size: 0.85rem;
+    transition: background-color 0.2s;
+}
+
+.tag:hover {
+    background-color: var(--color-bg-secondary);
+}
+
+/* Article styling */
+.main-content article {
+    margin-bottom: 2rem;
+}
+
+.main-content hr {
+    margin: 2rem 0;
+    opacity: 0.3;
+}
+
+.main-content article:last-child hr {
+    display: none;
+}
+
+/* Post summary styling */
+.post-summary {
+    line-height: 1.6;
+    margin: 1rem 0;
+    color: var(--color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-size: 0.95rem;
+}
+
+.post-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    main {
+        flex-direction: column;
+    }
+    
+    .main-content {
+        flex: 1 0 100%;
+        padding-right: 0;
+    }
+    
+    .sidebar {
+        flex: 1 0 100%;
+        margin-top: 2rem;
+    }
+}
