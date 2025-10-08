@@ -25,7 +25,13 @@ jobs:
           git submodule foreach --recursive git checkout -f master
 
       - name: Run docker compose
-        run: docker compose run --rm blog
+        run: |
+          docker compose run --rm blog \
+            --environment production \
+            --gc \
+            --minify \
+            --baseURL "${{ steps.pages.outputs.base_url }}/" \
+            --cacheDir "${{ runner.temp }}/hugo_cache"
       
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
