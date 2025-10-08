@@ -2,10 +2,10 @@
 services:
   blog:
     image: ghcr.io/gohugoio/hugo:v0.151.0
-    user: "${UID}:${GID}"
+    user: "${UID:-1000}:${GID:-1000}"
     environment:
-      - UID=${UID}
-      - GID=${GID}
+      - UID=${UID:-1000}
+      - GID=${GID:-1000}
     volumes:
       - ./:/project
 
