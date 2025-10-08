@@ -12,11 +12,18 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           submodules: recursive  # Ensures submodules are initialized and updated
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
+
+      - name: Debug
+        run: |
+          echo "Runner user ID: $(id -u)"
+          echo "Runner group ID: $(id -g)"
+          echo "Runner home directory: $HOME"
+          ls **/*
 
       - name: Get UID and GID
         run: |
