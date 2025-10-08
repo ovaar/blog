@@ -49,3 +49,7 @@ enableRobotsTXT = true
     noClasses = false
     style = "monokai"
     tabWidth = 4
+
+[caches]
+  [caches.images]
+    dir = ':cacheDir/images'
