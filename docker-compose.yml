@@ -1,16 +1,17 @@
 
 services:
   blog:
-    image: klakegg/hugo:0.90.1
+    image: ghcr.io/gohugoio/hugo:v0.151.0
+    command: --environment production --minify
     volumes:
-      - .:/src
-    environment:
-      NODE_ENV: production
+      - ./:/project
 
   server:
-    image: klakegg/hugo:0.90.1
-    command: server
+    image: ghcr.io/gohugoio/hugo:v0.151.0
+    #bind is inside the container, so this still will only have localhost:1313 listen on the host
+    command: serve  --port 1313 --bind 0.0.0.0 --disableFastRender 
     volumes:
-      - ".:/src"
+      - ./:/project
+      - ~/hugo_cache:/cache
     ports:
-      - "1313:1313"
+      - 1313:1313

@@ -1,17 +1,18 @@
 baseURL = "https://ovaar.github.io/"
 title = "Ovaar - Software engineering blog"
+copyright = "2020 Ovaar. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License."
 theme = "lyla"
 
-googleAnalytics = "UA-173180646-1"
+enableEmoji=true
 enableRobotsTXT = true
 
 [taxonomies]
    tag = "tags"
    category = "categories"
 
-[Social]
-    linkedin = "https://www.linkedin.com/in/thomas-reynders-6bb57057/"
+[params.social]
     github = "https://github.com/ovaar"
+    linkedin = "https://www.linkedin.com/in/thomas-reynders-6bb57057/"
 
 [params]
     Author = "Ovaar"
@@ -37,3 +38,14 @@ enableRobotsTXT = true
   [markup.goldmark]
     [markup.goldmark.renderer]
       unsafe = true
+
+  [markup.highlight]
+    codeFences = true
+    guessSyntax = false
+    hl_Lines = ""
+    lineNoStart = 1
+    lineNos = false
+    lineNumbersInTable = true
+    noClasses = false
+    style = "monokai"
+    tabWidth = 4
