@@ -25,13 +25,16 @@ jobs:
 
       - name: Run docker compose
         run: |
-          docker compose run --rm blog \
-            --environment production \
-            --gc \
-            --minify \
-            --noTimes \
-            --baseURL "${{ steps.pages.outputs.base_url }}/" \
-            --cacheDir "${{ runner.temp }}/hugo_cache"
+          docker compose run --rm \
+            -v "${{ runner.temp }}/hugo_cache:/cache" \
+            blog \
+              --gc \
+              --minify \
+              --noTimes \
+              --baseURL "${{ steps.pages.outputs.base_url }}/"
+        env:
+          HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
+          HUGO_ENVIRONMENT: production
       
       - uses: stefanzweifel/git-auto-commit-action@v5
         with:
