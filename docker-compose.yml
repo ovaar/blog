@@ -2,7 +2,7 @@
 services:
   blog:
     image: ghcr.io/gohugoio/hugo:v0.151.0
-    command: --environment production --minify
+    command: --environment production --minify --cleanDestinationDir --noBuildLock
     volumes:
       - ./:/project
 
