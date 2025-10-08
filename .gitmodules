@@ -1,6 +1,3 @@
-[submodule "themes/lyla"]
-	path = themes/lyla
-	url = https://github.com/ovaar/hugo-theme-lyla.git
 [submodule "public"]
 	path = public
 	url = https://github.com/ovaar/ovaar.github.io.git
