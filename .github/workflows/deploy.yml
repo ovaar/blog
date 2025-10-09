@@ -17,6 +17,7 @@ jobs:
           submodules: recursive  # Ensures submodules are initialized and updated
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
+          persist-credentials: true
 
       - name: Debug
         run: |
