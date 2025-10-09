@@ -39,6 +39,8 @@ jobs:
 
       - name: Run docker compose
         run: |
+          pwd
+          ls -al
           docker compose run --rm \
             -v "${{ runner.temp }}/hugo_cache:/cache" \
             blog \
