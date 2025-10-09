@@ -4,7 +4,7 @@ set -x # enable debugging
 printf "\033[0;32mDeploying updates to GitHub...\033[0m\n"
 
 # Build the project.
-docker compose up blog  # if using a theme, replace with `hugo -t <YOURTHEME>`
+docker compose run --rm blog --gc --minify --noTimes 
 
 # Go To Public folder
 pushd public
