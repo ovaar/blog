@@ -1,16 +1,13 @@
 {{ define "main" }}
-  {{ $paginate := .Paginate (where .Site.RegularPages ".Params.type" "=" "post") 5 }}
-  <section class="post-list">
-    <header class="list-header">
-      <h1>Blog Posts</h1>
-      {{ if gt $paginate.PageNumber 1 }}
-        <p>Page {{ $paginate.PageNumber }}</p>
-      {{ end }}
+  <section class="taxonomy taxonomy-tag">
+    <header class="taxonomy-header">
+      <h1>Tag: {{ .Title }}</h1>
+      <p>{{ len .Pages }} post{{ if ne (len .Pages) 1 }}s{{ end }} with <strong>#{{ .Title }}</strong></p>
     </header>
-    <div class="posts">
+    <div class="taxonomy-posts">
       {{ $paginator := .Paginate (sort .Pages "Date" "desc") }}
       {{ range $paginator.Pages }}
-        <article class="post-item">
+        <article class="taxonomy-post">
           <a href="{{ .Permalink }}"><h3>{{ .Title }}</h3></a>
           <p class="summary">
             {{ if .Params.summary }}
@@ -26,8 +23,9 @@
                 {{ $trimmedContent := $clean | truncate 300 "..." }}
                 {{ $trimmedContent }}
             {{ end }}
-          </p>
+            </p>
           <p class="meta"><small>Published {{ .Date.Format "Mon, 02 Jan 2006" }}</small></p>
+          {{- partial "tags.html" . -}}
         </article>
       {{ end }}
       {{ if gt $paginator.TotalPages 1 }}

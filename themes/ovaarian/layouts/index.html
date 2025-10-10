@@ -1,58 +1,48 @@
-<!DOCTYPE html>
-<html>
-    {{- partial "head.html" . -}}
-    <body>
-      <header>
-        {{- partial "header.html" . -}}
-        <h1> {{ .Site.Params.Author }}</h1>
-        <p>{{ .Site.Params.Description }}</p>
-      </header>
-      <main>
-        <div class="main-content">
-          {{ $posts := first 5 (where .Site.RegularPages "Section" "blog") }}
-          {{ range $index, $post := $posts }}
-            <article>
-              <a href="{{ .Permalink }}">
-                <h3>{{ .Title }}</h3>
-              </a>
-              <p class="post-summary">
-                {{ if .Params.summary }}
-                  {{ .Params.summary }}
-                {{ else }}
-                  {{ $content := .Content }}
-                  {{ $content := replaceRE `(?s)^(\s*<[uo]l>\s*<li>.*?</[uo]l>)` "" $content 1 }}
-                  {{ $content := replaceRE `(?s)^(\s*-\s*\[.*?\]\(#.*?\).*\n)+` "" $content 1 }}
-                  {{ $content := replaceRE `(?s)^(\s*\d+\.\s*\[.*?\]\(#.*?\).*\n)+` "" $content 1 }}
-                  {{ $content := replaceRE `(?s)<nav.*?</nav>` "" $content }}
-                  {{ $content := replaceRE `(?s)<table of contents.*?</table>` "" $content }}
-                  {{ $clean := $content | plainify | replaceRE `\s+` " " | strings.TrimPrefix " " }}
-                  {{ $trimmedContent := $clean | truncate 300 "..." }}
-                  {{ $trimmedContent }}
-                {{ end }}
-              </p>
-              <div class="post-meta">
-                <small>Published on {{ .Date.Format "Mon, 02 Jan 2006" }}</small>
-                {{- partial "tags.html" . -}}
-              </div>
-            </article>
-            {{ if ne (add $index 1) (len $posts) }}
-              <hr/>
-            {{ end }}
-          {{ end }}
-        </div>
-        <div class="sidebar">
-          <section class="tag-cloud">
-            <h3>Browse by Tags</h3>
-            <div class="tags">
-              {{ range $name, $taxonomy := .Site.Taxonomies.tags }}
-              <a href="{{ "tags/" | absURL }}{{ $name | urlize }}" class="tag">
-                #{{ $name }} ({{ $taxonomy.Count }})
-              </a>
+{{ define "main" }}
+  <section class="home">
+    <header>
+      <h1>{{ .Site.Params.Author }}</h1>
+      <p>{{ .Site.Params.Description }}</p>
+    </header>
+    <div class="layout-two-column">
+      <div class="main-content">
+        {{ $posts := first 5 (where .Site.RegularPages "Section" "blog") }}
+        {{ range $index, $post := $posts }}
+          <article class="home-post">
+            <a href="{{ .Permalink }}"><h3>{{ .Title }}</h3></a>
+            <p class="post-summary">
+              {{ if .Params.summary }}
+                {{ .Params.summary }}
+              {{ else }}
+                {{ $content := .Content }}
+                {{ $content := replaceRE `(?s)^(\s*<[uo]l>\s*<li>.*?</[uo]l>)` "" $content 1 }}
+                {{ $content := replaceRE `(?s)^(\s*-\s*\[.*?\]\(#.*?\).*\n)+` "" $content 1 }}
+                {{ $content := replaceRE `(?s)^(\s*\d+\.\s*\[.*?\]\(#.*?\).*\n)+` "" $content 1 }}
+                {{ $content := replaceRE `(?s)<nav.*?</nav>` "" $content }}
+                {{ $content := replaceRE `(?s)<table of contents.*?</table>` "" $content }}
+                {{ $clean := $content | plainify | replaceRE `\s+` " " | strings.TrimPrefix " " }}
+                {{ $trimmedContent := $clean | truncate 300 "..." }}
+                {{ $trimmedContent }}
               {{ end }}
+            </p>
+            <div class="post-meta">
+              <small>Published on {{ .Date.Format "Mon, 02 Jan 2006" }}</small>
+              {{- partial "tags.html" . -}}
             </div>
-          </section>
-        </div>
-      </main>
-      {{- partial "footer.html" . -}}
-    </body>
-</html>
+          </article>
+          {{ if ne (add $index 1) (len $posts) }}<hr />{{ end }}
+        {{ end }}
+      </div>
+      <aside class="sidebar">
+        <section class="tag-cloud">
+          <h3>Browse by Tags</h3>
+          <div class="tags">
+            {{ range $name, $taxonomy := .Site.Taxonomies.tags }}
+              <a href="{{ "tags/" | absURL }}{{ $name | urlize }}" class="tag">#{{ $name }} ({{ $taxonomy.Count }})</a>
+            {{ end }}
+          </div>
+        </section>
+      </aside>
+    </div>
+  </section>
+{{ end }}

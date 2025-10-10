@@ -1,0 +1,15 @@
+{{ define "main" }}
+  <section class="taxonomy-terms">
+    <header class="taxonomy-header">
+      <h1>{{ .Title }}</h1>
+      <p>Browse all {{ .Data.Plural | default "items" }}</p>
+    </header>
+    <div>
+        <ul class="terms-list">
+        {{ range $name, $taxonomy := .Site.Taxonomies.tags }}
+            <li><a href="{{ $.Site.BaseURL }}{{ $.Data.Plural }}/{{ $name | urlize }}/">#{{ $name }} ({{ $taxonomy.Count }})</a></li>
+        {{ end }}
+        </ul>
+    </div>
+  </section>
+{{ end }}

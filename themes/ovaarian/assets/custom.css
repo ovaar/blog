@@ -1,5 +1,27 @@
 /* Custom styles for Lyla theme */
 
+/* Header styling */
+
+header nav {
+  display: flex;
+  align-items: center;
+  margin-bottom: 3rem;
+}
+header nav ul {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  margin: 0;
+  padding: 0;
+}
+header nav ul li{
+  padding: 0;
+}
+
+body header {
+    padding: 3rem 1rem 0;
+}
+
 /* Social media links */
 .social {
     display: flex;
@@ -58,7 +80,7 @@
 }
 
 /* Two-column layout */
-main {
+.layout-two-column {
     display: flex;
     flex-wrap: wrap;
     gap: 2rem;
