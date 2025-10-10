@@ -1,0 +1,106 @@
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=author content="Ovaar"><meta name=description content="Software Engineering blog"><title>How to typed command line arguments in python - Ovaar - Software engineering blog</title><link rel=stylesheet href=/css/stylesheet.min.css><link href rel=feed type=application/rss+xml title="Ovaar - Software engineering blog"><script src=/theme-toggle.min.js></script></head><body><header><nav><a href=/>Ovaar - Software engineering blog</a><ul><li><a href=/>Home</a></li><li><a href=/blog/>Blog</a></li><li><a href=/tags>Tags</a></li><li><button id=theme-toggle class=theme-toggle aria-label="Toggle theme mode">
+<svg class="light-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+<svg class="dark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button></li></ul></nav><h1>How to typed command line arguments in python</h1><p><small>published on Mon, 22 Apr 2024</small></p></header><hr><main><div class=tags><a href=/tags/python class=tag>#python</a></div><article class=content><h1 id=how-to-typed-command-line-arguments-in-python>How to typed command line arguments in python</h1><p>Creating tools with python is a common practice due to its ease of use and productivity. Now python already has good built-in support for parsing command-line arguments, but we can take it one step further.</p><p>Let&rsquo;s take the following example where we would like to create a platform independent build script that should be able to accept the build type and an option to rebuild.</p><p>Since python3 we want to utilize the typing system as much as possible, meaning that the options the user can use as input for the commandline arguments are created from types so that if the types change the script arguments are automatically updated.</p><p>The <a href=https://docs.python.org/3/library/argparse.html#argparse.ArgumentParser>ArgumentParser</a> <code>type</code> parameter accepts a function that can help us to validate and transform the input data. A very useful class is <a href=https://docs.python.org/3/library/enum.html#enum.StrEnum>StrEnum</a> which, when inherited from, enables bidirectional conversion of string to enum. We can use this class to strictly declare which values our build_type argument accepts.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-py data-lang=py><span class=line><span class=cl><span class=ch>#!/usr/bin/env python3</span>
+</span></span><span class=line><span class=cl><span class=sa>r</span><span class=s2>&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s2>Platform independent build script.
+</span></span></span><span class=line><span class=cl><span class=s2>&#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=nn>argparse</span>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=nn>errno</span>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=nn>os</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>pathlib</span> <span class=kn>import</span> <span class=n>Path</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>typing</span> <span class=kn>import</span> <span class=n>Final</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>try</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=kn>from</span> <span class=nn>enum</span> <span class=kn>import</span> <span class=n>StrEnum</span>
+</span></span><span class=line><span class=cl><span class=k>except</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=k>raise</span> <span class=ne>Exception</span><span class=p>(</span><span class=s2>&#34;Install python &gt;= 3.11&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>DEFAULT_SOLUTION_PATH</span><span class=p>:</span> <span class=n>Final</span><span class=p>[</span><span class=n>Path</span><span class=p>]</span> <span class=o>=</span> <span class=n>Path</span><span class=p>(</span><span class=s2>&#34;application.sln&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>BuildType</span><span class=p>(</span><span class=n>StrEnum</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=n>Debug</span> <span class=o>=</span> <span class=s2>&#34;Debug&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=n>Release</span> <span class=o>=</span> <span class=s2>&#34;Release&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>to_build_type</span><span class=p>(</span><span class=n>arg</span><span class=p>:</span> <span class=nb>str</span><span class=p>)</span> <span class=o>-&gt;</span> <span class=n>BuildType</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=k>try</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>BuildType</span><span class=p>[</span><span class=n>arg</span><span class=p>]</span>
+</span></span><span class=line><span class=cl>    <span class=k>except</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=k>raise</span> <span class=n>argparse</span><span class=o>.</span><span class=n>ArgumentTypeError</span><span class=p>(</span><span class=sa>f</span><span class=s2>&#34;Invalid argument build_type &#39;</span><span class=si>{</span><span class=n>arg</span><span class=si>}</span><span class=s2>&#39;&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>to_path</span><span class=p>(</span><span class=n>arg</span><span class=p>:</span> <span class=nb>str</span><span class=p>)</span> <span class=o>-&gt;</span> <span class=n>Path</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=n>path</span> <span class=o>=</span> <span class=n>Path</span><span class=p>(</span><span class=n>arg</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=n>path</span><span class=o>.</span><span class=n>exists</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=n>path</span>
+</span></span><span class=line><span class=cl>    <span class=k>else</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=k>raise</span> <span class=ne>FileNotFoundError</span><span class=p>(</span><span class=n>errno</span><span class=o>.</span><span class=n>ENOENT</span><span class=p>,</span> <span class=n>os</span><span class=o>.</span><span class=n>strerror</span><span class=p>(</span><span class=n>errno</span><span class=o>.</span><span class=n>ENOENT</span><span class=p>),</span> <span class=n>arg</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>main</span><span class=p>(</span><span class=n>solution_path</span><span class=p>:</span> <span class=n>Path</span><span class=p>,</span> <span class=n>build_type</span><span class=p>:</span> <span class=n>BuildType</span><span class=p>,</span> <span class=n>rebuild</span><span class=p>:</span> <span class=nb>bool</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=nb>print</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=sa>f</span><span class=s2>&#34;</span><span class=si>{</span><span class=nb>str</span><span class=p>(</span><span class=n>solution_path</span><span class=p>)</span><span class=si>}</span><span class=s2> build_type=</span><span class=si>{</span><span class=n>build_type</span><span class=si>}</span><span class=s2> </span><span class=si>{</span><span class=s1>&#39;rebuild&#39;</span> <span class=k>if</span> <span class=n>rebuild</span> <span class=k>else</span> <span class=s1>&#39;&#39;</span><span class=si>}</span><span class=s2>&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>parser</span> <span class=o>=</span> <span class=n>argparse</span><span class=o>.</span><span class=n>ArgumentParser</span><span class=p>(</span><span class=n>description</span><span class=o>=</span><span class=s2>&#34;Build my application.&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=n>parser</span><span class=o>.</span><span class=n>add_argument</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;-b&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;--build_type&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nb>type</span><span class=o>=</span><span class=n>to_build_type</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>help</span><span class=o>=</span><span class=sa>f</span><span class=s1>&#39;Set the build type &#34;</span><span class=si>{</span><span class=s2>&#34;|&#34;</span><span class=o>.</span><span class=n>join</span><span class=p>(</span><span class=nb>list</span><span class=p>(</span><span class=n>BuildType</span><span class=o>.</span><span class=n>_member_names_</span><span class=p>))</span><span class=si>}</span><span class=s1>&#34;&#39;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>required</span><span class=o>=</span><span class=kc>True</span><span class=p>,</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=n>parser</span><span class=o>.</span><span class=n>add_argument</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;--rebuild&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>dest</span><span class=o>=</span><span class=s2>&#34;rebuild&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>action</span><span class=o>=</span><span class=s2>&#34;store_true&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>help</span><span class=o>=</span><span class=s2>&#34;When set a rebuild is started.&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=n>parser</span><span class=o>.</span><span class=n>add_argument</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;--path&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>dest</span><span class=o>=</span><span class=s2>&#34;path&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=nb>type</span><span class=o>=</span><span class=n>to_path</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>help</span><span class=o>=</span><span class=sa>f</span><span class=s2>&#34;The solution file path (optional, default=</span><span class=si>{</span><span class=nb>str</span><span class=p>(</span><span class=n>DEFAULT_SOLUTION_PATH</span><span class=p>)</span><span class=si>}</span><span class=s2>).&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>args</span> <span class=o>=</span> <span class=n>parser</span><span class=o>.</span><span class=n>parse_args</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=n>build_type</span><span class=p>:</span> <span class=n>BuildType</span> <span class=o>=</span> <span class=n>args</span><span class=o>.</span><span class=n>build_type</span>
+</span></span><span class=line><span class=cl><span class=n>solution_path</span><span class=p>:</span> <span class=n>Path</span> <span class=o>=</span> <span class=n>args</span><span class=o>.</span><span class=n>path</span> <span class=k>if</span> <span class=n>args</span><span class=o>.</span><span class=n>path</span> <span class=k>else</span> <span class=n>DEFAULT_SOLUTION_PATH</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>main</span><span class=p>(</span><span class=n>solution_path</span><span class=p>,</span> <span class=n>build_type</span><span class=p>,</span> <span class=n>args</span><span class=o>.</span><span class=n>rebuild</span><span class=p>)</span>
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl>$ python build.py --help
+</span></span><span class=line><span class=cl>usage: build.py <span class=o>[</span>-h<span class=o>]</span> -b BUILD_TYPE <span class=o>[</span>--rebuild<span class=o>]</span> <span class=o>[</span>--path PATH<span class=o>]</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Build my application.
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>options:
+</span></span><span class=line><span class=cl>  -h, --help            show this <span class=nb>help</span> message and <span class=nb>exit</span>
+</span></span><span class=line><span class=cl>  -b BUILD_TYPE, --build_type BUILD_TYPE
+</span></span><span class=line><span class=cl>                        Set the build <span class=nb>type</span> <span class=s2>&#34;Debug|Release&#34;</span>
+</span></span><span class=line><span class=cl>  --rebuild             When <span class=nb>set</span> a rebuild is started.
+</span></span><span class=line><span class=cl>  --path PATH           The solution file path <span class=o>(</span>optional, <span class=nv>default</span><span class=o>=</span>application.sln<span class=o>)</span>.
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>$ python build.py --build_type<span class=o>=</span>Release
+</span></span><span class=line><span class=cl>application.sln <span class=nv>build_type</span><span class=o>=</span>Release
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>$ python build.py --build_type<span class=o>=</span>RelWithDebug
+</span></span><span class=line><span class=cl>build.py: error: argument -b/--build_type: Invalid argument build_type <span class=s1>&#39;RelWithDebug&#39;</span>!
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>$ python build.py --build_type<span class=o>=</span>Release --rebuild
+</span></span><span class=line><span class=cl>application.sln <span class=nv>build_type</span><span class=o>=</span>Release rebuild
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>$ python build.py --build_type<span class=o>=</span>Release --path<span class=o>=</span>nopath.sln
+</span></span><span class=line><span class=cl>File <span class=s2>&#34;build.py&#34;</span>, line 38, in to_path
+</span></span><span class=line><span class=cl>    raise FileNotFoundError<span class=o>(</span>errno.ENOENT, os.strerror<span class=o>(</span>errno.ENOENT<span class=o>)</span>, arg<span class=o>)</span>
+</span></span><span class=line><span class=cl>FileNotFoundError: <span class=o>[</span>Errno 2<span class=o>]</span> No such file or directory: <span class=s1>&#39;nopath.sln&#39;</span>
+</span></span></code></pre></div></article></main><footer><footer><hr><div class=footer-content><div class=footer-info><p><small>Copyright &#169; 2020 Ovaar. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</small></p><p><small>created with <a href=https://gohugo.io>Hugo</a>,
+<a href=https://github.com/andybrewer/mvp>mvp.css</a>.</small></p></div><div class=footer-social><div class=social><a href=https://github.com/ovaar target=_blank rel="noopener noreferrer" aria-label="github profile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37.0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44.0 0020 4.77 5.07 5.07.0 0019.91 1S18.73.65 16 2.48a13.38 13.38.0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07.0 005 4.77 5.44 5.44.0 003.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37.0 009 18.13V22"/></svg>
+</a><a href=https://www.linkedin.com/in/thomas-reynders-6bb57057/ target=_blank rel="noopener noreferrer" aria-label="linkedin profile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a></div></div></div></footer></footer></body></html>

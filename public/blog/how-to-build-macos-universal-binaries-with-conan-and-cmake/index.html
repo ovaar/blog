@@ -1,0 +1,227 @@
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=author content="Ovaar"><meta name=description content="Software Engineering blog"><title>How to build Macos Universal Binaries with Conan and CMake - Ovaar - Software engineering blog</title><link rel=stylesheet href=/css/stylesheet.min.css><link href rel=feed type=application/rss+xml title="Ovaar - Software engineering blog"><script src=/theme-toggle.min.js></script></head><body><header><nav><a href=/>Ovaar - Software engineering blog</a><ul><li><a href=/>Home</a></li><li><a href=/blog/>Blog</a></li><li><a href=/tags>Tags</a></li><li><button id=theme-toggle class=theme-toggle aria-label="Toggle theme mode">
+<svg class="light-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+<svg class="dark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button></li></ul></nav><h1>How to build Macos Universal Binaries with Conan and CMake</h1><p><small>published on Fri, 25 Nov 2022</small></p></header><hr><main><div class=tags><a href=/tags/conan class=tag>#conan</a>
+<a href=/tags/cmake class=tag>#cmake</a></div><article class=content><p>*** update (May 2025) ***</p><ul><li>Added conan 2.x cmaketoolchain universal binary support.</li><li>Added VirtualBuildEnv configuration examples.</li><li>Added section about compiling boost.</li><li>Added automated patching section.</li></ul><h1 id=how-to-build-macos-universal-binaries-with-conan-and-cmake>How to build Macos Universal Binaries with Conan and CMake</h1><p><a href=https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary>Universal Binaries</a> contain native instructions for multiple target architectures like x86_64 and arm64 to run your app both on Intel Mac and Apple silicon machines. When using Conan there are a few common build systems, or native build tool generators, when creating packages from the Conan Center Index(CCI) like: CMake, Autotools, Pkgconfig, b2 (Boost Build) and Make. Some of these build tools have build-in support when it comes to building Universal Binaries.</p><p>Lets start with some of the easy examples how to enable Universal builds in conan.</p><h2 id=cmake>CMake</h2><p>Conan 2.x CMakeToolchain generator now has built-in support for to specify multiple architectures from the architecture settings, read <a href=https://docs.conan.io/2/reference/tools/cmake/cmaketoolchain.html#support-for-universal-binaries-in-macos>Support for Universal Binaries in macOS</a>, but this feature is only works with packages built using CMake, so for other recipes you still need to patch the upstream recipe.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl><span class=c1># Passes the alphabetically sorted architectures as a setting option</span>
+</span></span><span class=line><span class=cl>$ conan create . --name<span class=o>=</span>mylibrary --version<span class=o>=</span>1.0 -s<span class=o>=</span><span class=s2>&#34;arch=armv8|x86_64&#34;</span>
+</span></span></code></pre></div><p>Or using the profiles</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl><span class=c1># apple.profile</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>settings<span class=o>]</span>
+</span></span><span class=line><span class=cl>    <span class=nv>os</span><span class=o>=</span>Macos
+</span></span><span class=line><span class=cl>    <span class=nv>arch</span><span class=o>=</span>armv8<span class=p>|</span>x86_64
+</span></span><span class=line><span class=cl>    <span class=nv>compiler</span><span class=o>=</span>apple-clang
+</span></span><span class=line><span class=cl>    <span class=nv>build_type</span><span class=o>=</span>Release
+</span></span><span class=line><span class=cl>    compiler.cppstd<span class=o>=</span><span class=m>23</span>
+</span></span><span class=line><span class=cl>    compiler.version<span class=o>=</span>15.0
+</span></span><span class=line><span class=cl>    compiler.libcxx<span class=o>=</span>libc++
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl>$ conan create . --name<span class=o>=</span>mylibrary --version<span class=o>=</span>1.0 -pr:a<span class=o>=</span><span class=s2>&#34;apple.profile&#34;</span>
+</span></span></code></pre></div><p>The CMake toolchain generator exposes the <a href=https://cmake.org/cmake/help/latest/variable/CMAKE_OSX_ARCHITECTURES.html>CMAKE_OSX_ARCHITECTURES</a> flag to set the target architectures.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-py data-lang=py><span class=line><span class=cl><span class=kn>from</span> <span class=nn>conan</span> <span class=kn>import</span> <span class=n>ConanFile</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>conan.tools.cmake</span> <span class=kn>import</span> <span class=n>CMake</span><span class=p>,</span> <span class=n>CMakeToolchain</span><span class=p>,</span> <span class=n>cmake_layout</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>PackageConan</span><span class=p>(</span><span class=n>ConanFile</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>generate</span><span class=p>(</span><span class=bp>self</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=n>tc</span> <span class=o>=</span> <span class=n>CMakeToolchain</span><span class=p>(</span><span class=bp>self</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=o>.</span><span class=n>os</span> <span class=o>==</span> <span class=s2>&#34;Macos&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=n>tc</span><span class=o>.</span><span class=n>blocks</span><span class=p>[</span><span class=s2>&#34;apple_system&#34;</span><span class=p>]</span><span class=o>.</span><span class=n>values</span><span class=p>[</span><span class=s2>&#34;cmake_osx_architectures&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=s2>&#34;x86_64;arm64&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=n>tc</span><span class=o>.</span><span class=n>generate</span><span class=p>()</span>
+</span></span></code></pre></div><p>If you want to decouple the architecture settings from your recipe you, for example use the VirtualBuildEnv to read the settings from your conan profile, by setting the <code>[buildenv]</code> environment variable like <code>OSX_ARCH_VARIANTS</code> as shown in the following example:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl><span class=c1># apple.profile</span>
+</span></span><span class=line><span class=cl><span class=o>[</span>settings<span class=o>]</span>
+</span></span><span class=line><span class=cl>    <span class=nv>os</span><span class=o>=</span>Macos
+</span></span><span class=line><span class=cl>    <span class=nv>arch</span><span class=o>=</span>armv8<span class=p>|</span>x86_64
+</span></span><span class=line><span class=cl>    <span class=nv>compiler</span><span class=o>=</span>apple-clang
+</span></span><span class=line><span class=cl>    <span class=nv>build_type</span><span class=o>=</span>Release
+</span></span><span class=line><span class=cl>    compiler.cppstd<span class=o>=</span><span class=m>23</span>
+</span></span><span class=line><span class=cl>    compiler.version<span class=o>=</span>15.0
+</span></span><span class=line><span class=cl>    compiler.libcxx<span class=o>=</span>libc++
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>[</span>buildenv<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>OSX_ARCH_VARIANTS</span><span class=o>=</span>x86_64<span class=p>;</span>arm64
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 class=chroma><code class=language-py data-lang=py><span class=line><span class=cl><span class=kn>from</span> <span class=nn>conan</span> <span class=kn>import</span> <span class=n>ConanFile</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>conan.tools.cmake</span> <span class=kn>import</span> <span class=n>CMake</span><span class=p>,</span> <span class=n>CMakeToolchain</span><span class=p>,</span> <span class=n>cmake_layout</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>PackageConan</span><span class=p>(</span><span class=n>ConanFile</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>generate</span><span class=p>(</span><span class=bp>self</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=n>tc</span> <span class=o>=</span> <span class=n>CMakeToolchain</span><span class=p>(</span><span class=bp>self</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=o>.</span><span class=n>os</span> <span class=o>==</span> <span class=s2>&#34;Macos&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=kn>from</span> <span class=nn>conan.tools.env</span> <span class=kn>import</span> <span class=n>VirtualBuildEnv</span>
+</span></span><span class=line><span class=cl>            <span class=n>buildenv</span> <span class=o>=</span> <span class=n>VirtualBuildEnv</span><span class=p>(</span><span class=bp>self</span><span class=p>)</span><span class=o>.</span><span class=n>vars</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>            <span class=n>arch_variants</span> <span class=o>=</span> <span class=n>buildenv</span><span class=o>.</span><span class=n>get</span><span class=p>(</span><span class=s2>&#34;OSX_ARCH_VARIANTS&#34;</span><span class=p>,</span> <span class=s2>&#34;&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=bp>self</span><span class=o>.</span><span class=n>output</span><span class=o>.</span><span class=n>info</span><span class=p>(</span><span class=sa>f</span><span class=s2>&#34;CMAKE_OSX_ARCHITECTURES=</span><span class=si>{</span><span class=n>arch_variants</span><span class=si>}</span><span class=s2>&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=n>tc</span><span class=o>.</span><span class=n>blocks</span><span class=p>[</span><span class=s2>&#34;apple_system&#34;</span><span class=p>]</span><span class=o>.</span><span class=n>values</span><span class=p>[</span><span class=s2>&#34;cmake_osx_architectures&#34;</span><span class=p>]</span> <span class=o>=</span> <span class=n>arch_variants</span>
+</span></span><span class=line><span class=cl>        <span class=n>tc</span><span class=o>.</span><span class=n>generate</span><span class=p>()</span>
+</span></span></code></pre></div><h2 id=autotools>Autotools</h2><p>Autotools allows you to set the target architectures via <code>extra_cflags</code>.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-py data-lang=py><span class=line><span class=cl><span class=kn>from</span> <span class=nn>conan</span> <span class=kn>import</span> <span class=n>ConanFile</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>conan.tools.gnu</span> <span class=kn>import</span> <span class=n>Autotools</span><span class=p>,</span> <span class=n>AutotoolsToolchain</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>PackageConan</span><span class=p>(</span><span class=n>ConanFile</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>generate</span><span class=p>(</span><span class=bp>self</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=n>tc</span> <span class=o>=</span> <span class=n>AutotoolsToolchain</span><span class=p>(</span><span class=bp>self</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=o>.</span><span class=n>os</span> <span class=o>==</span> <span class=s2>&#34;Macos&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=n>tc</span><span class=o>.</span><span class=n>extra_cflags</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=s2>&#34;-arch x86_64 -arch arm64&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>tc</span><span class=o>.</span><span class=n>generate</span><span class=p>()</span>
+</span></span></code></pre></div><h2 id=boost>Boost</h2><p>Boost 1.80.0 uses Autotools to build, so we can utilize what we have already learned with the Autotools patch and apply it on the boost recipe and compile with <code>-s:a="boost*:pch=False"</code></p><div class=highlight><pre tabindex=0 class=chroma><code class=language-diff data-lang=diff><span class=line><span class=cl>[PATCH] patch: Applying AUTOTOOLS_UNIVERSAL_PATCH for boost
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=gd>- Set extra flags for Autotools to compile a Universal FAT binary on macOS from the OSX_ARCH_VARIANTS buildenv option
+</span></span></span><span class=line><span class=cl><span class=gd></span>
+</span></span><span class=line><span class=cl><span class=gu>@@ -1392,6 +1392,12 @@ class BoostConan(ConanFile):
+</span></span></span><span class=line><span class=cl><span class=gu></span> 
+</span></span><span class=line><span class=cl>         if is_apple_os(self):
+</span></span><span class=line><span class=cl>             apple_min_version_flag = AutotoolsToolchain(self).apple_min_version_flag
+</span></span><span class=line><span class=cl><span class=gi>+            buildenv = VirtualBuildEnv(self).vars()
+</span></span></span><span class=line><span class=cl><span class=gi>+            arch_variants = buildenv.get(&#34;OSX_ARCH_VARIANTS&#34;, &#34;&#34;)
+</span></span></span><span class=line><span class=cl><span class=gi>+            self.output.info(f&#34;AUTOTOOLS_OSX_ARCHITECTURES={arch_variants}&#34;)
+</span></span></span><span class=line><span class=cl><span class=gi>+            extra_archs = [f&#34;-arch {arch}&#34; for arch in arch_variants.split(&#34;;&#34;)]
+</span></span></span><span class=line><span class=cl><span class=gi>+            cxx_flags.extend(extra_archs)
+</span></span></span><span class=line><span class=cl><span class=gi>+            link_flags.extend(extra_archs)
+</span></span></span><span class=line><span class=cl><span class=gi></span>             if apple_min_version_flag:
+</span></span><span class=line><span class=cl>                 cxx_flags.append(apple_min_version_flag)
+</span></span><span class=line><span class=cl>                 link_flags.append(apple_min_version_flag)
+</span></span></code></pre></div><h2 id=automated-conan-recipe-patching-for-universal-fat-binaries>Automated Conan Recipe patching for Universal (FAT) binaries</h2><p>I really like to automate things, so I can spend my valuable time on other things where it is needed.
+That is why I wrote a little python script that helps to insert the universal binaries patch for all my recipes.
+Since we know how and where to patch recipes that use CMake or Autotools we can search the content of a file and insert the patch where needed.
+In the patch I have added the marker <code>CMAKE_OSX_ARCHITECTURES</code> or <code>AUTOTOOLS_OSX_ARCHITECTURES</code>, so I later easily know if the recipe has been patched.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-py data-lang=py><span class=line><span class=cl><span class=kn>from</span> <span class=nn>pathlib</span> <span class=kn>import</span> <span class=n>Path</span>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=nn>re</span>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=nn>textwrap</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>typing</span> <span class=kn>import</span> <span class=n>List</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>def</span> <span class=nf>find_in_file</span><span class=p>(</span><span class=n>path</span><span class=p>:</span> <span class=n>Path</span><span class=p>,</span> <span class=n>q</span><span class=p>:</span> <span class=nb>str</span><span class=p>)</span> <span class=o>-&gt;</span> <span class=nb>bool</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=k>try</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>with</span> <span class=n>path</span><span class=o>.</span><span class=n>open</span><span class=p>(</span><span class=s2>&#34;r&#34;</span><span class=p>,</span> <span class=n>encoding</span><span class=o>=</span><span class=s2>&#34;utf-8&#34;</span><span class=p>)</span> <span class=k>as</span> <span class=n>f</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=k>for</span> <span class=n>l</span> <span class=ow>in</span> <span class=n>f</span><span class=o>.</span><span class=n>readlines</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>                <span class=k>if</span> <span class=n>m</span> <span class=o>:=</span> <span class=n>re</span><span class=o>.</span><span class=n>search</span><span class=p>(</span><span class=n>q</span><span class=p>,</span> <span class=n>l</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>                    <span class=k>return</span> <span class=kc>True</span>
+</span></span><span class=line><span class=cl>    <span class=k>except</span> <span class=ne>Exception</span> <span class=k>as</span> <span class=n>e</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=nb>print</span><span class=p>(</span><span class=sa>f</span><span class=s2>&#34;Failed to read file </span><span class=si>{</span><span class=n>path</span><span class=si>}</span><span class=s2>, error: </span><span class=si>{</span><span class=n>e</span><span class=si>}</span><span class=s2>&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>raise</span> <span class=n>e</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>return</span> <span class=kc>False</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>CMAKE_UNIVERSAL_PATCH</span> <span class=o>=</span> <span class=n>textwrap</span><span class=o>.</span><span class=n>dedent</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;&#34;&#34;</span><span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span><span class=s2>if self.settings.os == &#34;Macos&#34;:
+</span></span></span><span class=line><span class=cl><span class=s2>    </span><span class=si>{IMPORT_VIRTUALBUILDENV}</span><span class=s2>
+</span></span></span><span class=line><span class=cl><span class=s2>    buildenv = VirtualBuildEnv(self).vars()
+</span></span></span><span class=line><span class=cl><span class=s2>    arch_variants = buildenv.get(&#34;OSX_ARCH_VARIANTS&#34;, &#34;&#34;)
+</span></span></span><span class=line><span class=cl><span class=s2>    self.output.info(f&#34;CMAKE_OSX_ARCHITECTURES={{arch_variants}}&#34;)
+</span></span></span><span class=line><span class=cl><span class=s2>    </span><span class=si>{VARIABLE_NAME}</span><span class=s2>.blocks[&#34;apple_system&#34;].values[&#34;cmake_osx_architectures&#34;] = arch_variants&#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span><span class=o>.</span><span class=n>strip</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=s2>&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s2>source: https://www.gnu.org/software/autoconf/manual/autoconf-2.63/html_node/Multiple-Architectures.html
+</span></span></span><span class=line><span class=cl><span class=s2>&#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>AUTOTOOLS_UNIVERSAL_PATCH</span> <span class=o>=</span> <span class=n>textwrap</span><span class=o>.</span><span class=n>dedent</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;&#34;&#34;</span><span class=se>\
+</span></span></span><span class=line><span class=cl><span class=se></span><span class=s2>if self.settings.os == &#34;Macos&#34;:
+</span></span></span><span class=line><span class=cl><span class=s2>    </span><span class=si>{IMPORT_VIRTUALBUILDENV}</span><span class=s2>
+</span></span></span><span class=line><span class=cl><span class=s2>    buildenv = VirtualBuildEnv(self).vars()
+</span></span></span><span class=line><span class=cl><span class=s2>    arch_variants = buildenv.get(&#34;OSX_ARCH_VARIANTS&#34;, &#34;&#34;)
+</span></span></span><span class=line><span class=cl><span class=s2>    self.output.info(f&#34;AUTOTOOLS_OSX_ARCHITECTURES={{arch_variants}}&#34;)
+</span></span></span><span class=line><span class=cl><span class=s2>    extra_archs = [f&#34;-arch {{arch}}&#34; for arch in arch_variants.split(&#34;;&#34;)]
+</span></span></span><span class=line><span class=cl><span class=s2>    </span><span class=si>{VARIABLE_NAME}</span><span class=s2>.extra_cflags.extend(extra_archs)
+</span></span></span><span class=line><span class=cl><span class=s2>    </span><span class=si>{VARIABLE_NAME}</span><span class=s2>.extra_cxxflags.extend(extra_archs)
+</span></span></span><span class=line><span class=cl><span class=s2>    </span><span class=si>{VARIABLE_NAME}</span><span class=s2>.extra_ldflags.extend(extra_archs)
+</span></span></span><span class=line><span class=cl><span class=s2>    &#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>)</span><span class=o>.</span><span class=n>strip</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>ConanRecipeFatBinaryPatcher</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s2>    This class automates the insertion of a FAT binary patch into a Conan recipe.
+</span></span></span><span class=line><span class=cl><span class=s2>    It searches for the toolchain assignment in the recipe and inserts the patch code
+</span></span></span><span class=line><span class=cl><span class=s2>    immediately after that line.
+</span></span></span><span class=line><span class=cl><span class=s2>
+</span></span></span><span class=line><span class=cl><span class=s2>    Note:
+</span></span></span><span class=line><span class=cl><span class=s2>        - This automated patching process is designed to handle the majority of cases
+</span></span></span><span class=line><span class=cl><span class=s2>          (approximately 99</span><span class=si>% o</span><span class=s2>f use cases), but it is not guaranteed to be foolproof.
+</span></span></span><span class=line><span class=cl><span class=s2>    &#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=fm>__init__</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>toolchain</span><span class=p>:</span> <span class=nb>str</span><span class=p>,</span> <span class=n>patch_code</span><span class=p>:</span> <span class=nb>str</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=bp>self</span><span class=o>.</span><span class=n>patch_code</span> <span class=o>=</span> <span class=n>patch_code</span>
+</span></span><span class=line><span class=cl>        <span class=bp>self</span><span class=o>.</span><span class=n>toolchain</span> <span class=o>=</span> <span class=n>toolchain</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=nf>apply_patch</span><span class=p>(</span><span class=bp>self</span><span class=p>,</span> <span class=n>recipe_file_path</span><span class=p>:</span> <span class=n>Path</span><span class=p>)</span> <span class=o>-&gt;</span> <span class=nb>str</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=s2>&#34;&#34;&#34;Find the toolchain assignment and insert patch after that line&#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=n>content</span> <span class=o>=</span> <span class=n>recipe_file_path</span><span class=o>.</span><span class=n>read_text</span><span class=p>(</span><span class=n>encoding</span><span class=o>=</span><span class=s2>&#34;utf-8&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>lines</span><span class=p>:</span> <span class=n>List</span><span class=p>[</span><span class=nb>str</span><span class=p>]</span> <span class=o>=</span> <span class=p>[]</span>
+</span></span><span class=line><span class=cl>        <span class=k>for</span> <span class=n>line</span> <span class=ow>in</span> <span class=n>content</span><span class=o>.</span><span class=n>splitlines</span><span class=p>():</span>
+</span></span><span class=line><span class=cl>            <span class=n>line_without_whitespace</span> <span class=o>=</span> <span class=n>line</span><span class=o>.</span><span class=n>replace</span><span class=p>(</span><span class=s2>&#34; &#34;</span><span class=p>,</span> <span class=s2>&#34;&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>            <span class=k>if</span> <span class=sa>f</span><span class=s2>&#34;=</span><span class=si>{</span><span class=bp>self</span><span class=o>.</span><span class=n>toolchain</span><span class=si>}</span><span class=s2>&#34;</span> <span class=ow>in</span> <span class=n>line_without_whitespace</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>                <span class=n>indentation</span><span class=p>:</span> <span class=nb>int</span> <span class=o>=</span> <span class=nb>len</span><span class=p>(</span><span class=n>line</span><span class=p>)</span> <span class=o>-</span> <span class=nb>len</span><span class=p>(</span><span class=n>line</span><span class=o>.</span><span class=n>lstrip</span><span class=p>())</span>
+</span></span><span class=line><span class=cl>                <span class=n>assignment</span> <span class=o>=</span> <span class=n>line_without_whitespace</span><span class=o>.</span><span class=n>split</span><span class=p>(</span><span class=s2>&#34;=&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>                <span class=n>patch_code</span> <span class=o>=</span> <span class=n>textwrap</span><span class=o>.</span><span class=n>indent</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>                    <span class=bp>self</span><span class=o>.</span><span class=n>patch_code</span><span class=o>.</span><span class=n>format</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>                        <span class=n>VARIABLE_NAME</span><span class=o>=</span><span class=n>assignment</span><span class=p>[</span><span class=mi>0</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>                        <span class=n>IMPORT_VIRTUALBUILDENV</span><span class=o>=</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>                            <span class=s2>&#34;&#34;</span>
+</span></span><span class=line><span class=cl>                            <span class=k>if</span> <span class=n>find_in_file</span><span class=p>(</span><span class=n>recipe_file_path</span><span class=p>,</span> <span class=sa>r</span><span class=s2>&#34;import VirtualBuildEnv&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                            <span class=k>else</span> <span class=s2>&#34;from conan.tools.env import VirtualBuildEnv&#34;</span>
+</span></span><span class=line><span class=cl>                        <span class=p>),</span>
+</span></span><span class=line><span class=cl>                    <span class=p>),</span>
+</span></span><span class=line><span class=cl>                    <span class=s2>&#34; &#34;</span> <span class=o>*</span> <span class=n>indentation</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>                <span class=c1># Insert patch after</span>
+</span></span><span class=line><span class=cl>                <span class=n>lines</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>line</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>                <span class=n>lines</span><span class=o>.</span><span class=n>extend</span><span class=p>([</span><span class=n>line</span> <span class=k>for</span> <span class=n>line</span> <span class=ow>in</span> <span class=n>patch_code</span><span class=o>.</span><span class=n>splitlines</span><span class=p>()</span> <span class=k>if</span> <span class=n>line</span><span class=o>.</span><span class=n>strip</span><span class=p>()</span> <span class=o>!=</span> <span class=s2>&#34;&#34;</span><span class=p>])</span>
+</span></span><span class=line><span class=cl>                <span class=n>is_patched</span> <span class=o>=</span> <span class=kc>True</span>
+</span></span><span class=line><span class=cl>            <span class=k>else</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>                <span class=n>lines</span><span class=o>.</span><span class=n>append</span><span class=p>(</span><span class=n>line</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>if</span> <span class=ow>not</span> <span class=n>is_patched</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=k>raise</span> <span class=ne>Exception</span><span class=p>(</span><span class=s2>&#34;Failed to patch recipe, manual action required!&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>        <span class=k>return</span> <span class=s2>&#34;</span><span class=se>\n</span><span class=s2>&#34;</span><span class=o>.</span><span class=n>join</span><span class=p>(</span><span class=n>lines</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>AutotoolsToolchainConanRecipePatcher</span><span class=p>(</span><span class=n>ConanRecipeFatBinaryPatcher</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s2>    Patches a Conan recipe with a FAT binary patch for the Autotools toolchain.
+</span></span></span><span class=line><span class=cl><span class=s2>    &#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=fm>__init__</span><span class=p>(</span><span class=bp>self</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=nb>super</span><span class=p>()</span><span class=o>.</span><span class=fm>__init__</span><span class=p>(</span><span class=s2>&#34;AutotoolsToolchain&#34;</span><span class=p>,</span> <span class=n>AUTOTOOLS_UNIVERSAL_PATCH</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>CMakeToolchainConanRecipePatcher</span><span class=p>(</span><span class=n>ConanRecipeFatBinaryPatcher</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=s2>&#34;&#34;&#34;
+</span></span></span><span class=line><span class=cl><span class=s2>    Patches a Conan recipe with a FAT binary patch for the CMake toolchain.
+</span></span></span><span class=line><span class=cl><span class=s2>    &#34;&#34;&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>    <span class=k>def</span> <span class=fm>__init__</span><span class=p>(</span><span class=bp>self</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=nb>super</span><span class=p>()</span><span class=o>.</span><span class=fm>__init__</span><span class=p>(</span><span class=s2>&#34;CMakeToolchain&#34;</span><span class=p>,</span> <span class=n>CMAKE_UNIVERSAL_PATCH</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>recipe_path</span><span class=p>:</span><span class=n>Path</span> <span class=o>=</span> <span class=n>Path</span><span class=p>(</span><span class=s2>&#34;conanfile.py&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># Patch CMake</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=n>find_in_file</span><span class=p>(</span><span class=n>package</span><span class=o>.</span><span class=n>recipe_path</span><span class=p>,</span> <span class=sa>r</span><span class=s2>&#34;CMakeToolchain&#34;</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=ow>not</span> <span class=n>find_in_file</span><span class=p>(</span><span class=n>package</span><span class=o>.</span><span class=n>recipe_path</span><span class=p>,</span> <span class=sa>r</span><span class=s2>&#34;CMAKE_OSX_ARCHITECTURES&#34;</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>        <span class=n>logger</span><span class=o>.</span><span class=n>info</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>            <span class=sa>f</span><span class=s2>&#34;Applying Cmake FAT Binary patch to &#39;</span><span class=si>{</span><span class=n>package</span><span class=o>.</span><span class=n>name</span><span class=si>}</span><span class=s2>&#39; conan recipe.&#34;</span>
+</span></span><span class=line><span class=cl>        <span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=n>patched_code</span> <span class=o>=</span> <span class=n>CMakeToolchainConanRecipePatcher</span><span class=p>()</span><span class=o>.</span><span class=n>apply_patch</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>            <span class=n>package</span><span class=o>.</span><span class=n>recipe_path</span>
+</span></span><span class=line><span class=cl>        <span class=p>)</span>
+</span></span><span class=line><span class=cl>        <span class=k>with</span> <span class=n>package</span><span class=o>.</span><span class=n>recipe_path</span><span class=o>.</span><span class=n>open</span><span class=p>(</span><span class=n>encoding</span><span class=o>=</span><span class=s2>&#34;utf-8&#34;</span><span class=p>,</span> <span class=n>mode</span><span class=o>=</span><span class=s2>&#34;w&#34;</span><span class=p>)</span> <span class=k>as</span> <span class=n>f</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>            <span class=n>f</span><span class=o>.</span><span class=n>write</span><span class=p>(</span><span class=n>patched_code</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=c1># Patch Autotools, note I don&#39;t use elif here, since recipes can have both CMake and Autotools</span>
+</span></span><span class=line><span class=cl><span class=k>if</span> <span class=ow>not</span> <span class=n>find_in_file</span><span class=p>(</span><span class=n>recipe_path</span><span class=p>,</span> <span class=sa>r</span><span class=s2>&#34;AUTOTOOLS_OSX_ARCHITECTURES&#34;</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=nb>print</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=sa>f</span><span class=s2>&#34;Applying Autotools FAT Binary patch to &#39;</span><span class=si>{</span><span class=n>recipe_path</span><span class=o>.</span><span class=n>name</span><span class=si>}</span><span class=s2>&#39; conan recipe.&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=n>patched_code</span> <span class=o>=</span> <span class=n>AutotoolsToolchainConanRecipePatcher</span><span class=p>()</span><span class=o>.</span><span class=n>apply_patch</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>        <span class=n>recipe_path</span>
+</span></span><span class=line><span class=cl>    <span class=p>)</span>
+</span></span><span class=line><span class=cl>    <span class=k>with</span> <span class=n>recipe_path</span><span class=o>.</span><span class=n>open</span><span class=p>(</span><span class=n>encoding</span><span class=o>=</span><span class=s2>&#34;utf-8&#34;</span><span class=p>,</span> <span class=n>mode</span><span class=o>=</span><span class=s2>&#34;w&#34;</span><span class=p>)</span> <span class=k>as</span> <span class=n>f</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>        <span class=n>f</span><span class=o>.</span><span class=n>write</span><span class=p>(</span><span class=n>patched_code</span><span class=p>)</span>
+</span></span></code></pre></div><h2 id=other-build-tools>Other build tools</h2><p>For other build tools that, I am less experienced with or have not found an easy solution for, I wrote a wrapper Conan recipe. This wrapper Conanfile takes the build output of a <code>x86_64</code> and <code>armv8</code> package and combines them using <code>lipo</code>.</p><p>A script writes the hashes of the built packages that will be combined to a json file. When building the &ldquo;universal&rdquo; conan recipe it loads the json files and combines the build output of those two packages, for example &ldquo;arch=x86_64 AND build_type=Release&rdquo; with &ldquo;arch=armv8 AND build_type=Release&rdquo;, in a temporary directory that will be merged with the package_folder once done. The advantage of this approach is that you can update the original recipe from CCI without migrating the universal binaries merge logic to the updated recipe.</p><p>See this <a href=https://gist.github.com/ovaar/2106071841f1e917f89d10f6d3095638>Github Gist</a> for the conanfile template.</p><h3 id=verifying-universal-binaries-output>Verifying Universal Binaries output</h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-sh data-lang=sh><span class=line><span class=cl><span class=nb>cd</span> ~/.conan/data/&lt;packagename&gt;/_/_/package/&lt;hash&gt;/lib
+</span></span><span class=line><span class=cl>lipo -archs &lt;libname&gt;.a
+</span></span><span class=line><span class=cl><span class=c1># x86_64 arm64</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>lipo -archs &lt;libname&gt;.dylib
+</span></span><span class=line><span class=cl><span class=c1># x86_64 arm64</span>
+</span></span></code></pre></div></article></main><footer><footer><hr><div class=footer-content><div class=footer-info><p><small>Copyright &#169; 2020 Ovaar. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</small></p><p><small>created with <a href=https://gohugo.io>Hugo</a>,
+<a href=https://github.com/andybrewer/mvp>mvp.css</a>.</small></p></div><div class=footer-social><div class=social><a href=https://github.com/ovaar target=_blank rel="noopener noreferrer" aria-label="github profile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37.0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44.0 0020 4.77 5.07 5.07.0 0019.91 1S18.73.65 16 2.48a13.38 13.38.0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07.0 005 4.77 5.44 5.44.0 003.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37.0 009 18.13V22"/></svg>
+</a><a href=https://www.linkedin.com/in/thomas-reynders-6bb57057/ target=_blank rel="noopener noreferrer" aria-label="linkedin profile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a></div></div></div></footer></footer></body></html>

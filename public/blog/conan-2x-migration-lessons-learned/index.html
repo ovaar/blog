@@ -1,0 +1,366 @@
+<!doctype html><html><head><meta charset=utf-8><meta http-equiv=X-UA-Compatible content="IE=edge"><meta name=viewport content="width=device-width,initial-scale=1"><meta name=author content="Ovaar"><meta name=description content="Software Engineering blog"><title>Conan 2.x migration and the lessons learned - Ovaar - Software engineering blog</title><link rel=stylesheet href=/css/stylesheet.min.css><link href rel=feed type=application/rss+xml title="Ovaar - Software engineering blog"><script src=/theme-toggle.min.js></script></head><body><header><nav><a href=/>Ovaar - Software engineering blog</a><ul><li><a href=/>Home</a></li><li><a href=/blog/>Blog</a></li><li><a href=/tags>Tags</a></li><li><button id=theme-toggle class=theme-toggle aria-label="Toggle theme mode">
+<svg class="light-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+<svg class="dark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg></button></li></ul></nav><h1>Conan 2.x migration and the lessons learned</h1><p><small>published on Fri, 12 Sep 2025</small></p></header><hr><main><div class=tags><a href=/tags/conan class=tag>#conan</a></div><article class=content><ul><li><a href=#1-conan-2x-migration-and-the-lessons-learned>1. Conan 2.x migration and the lessons learned</a><ul><li><a href=#11-the-path-to-conan-2>1.1. The path to Conan 2</a></li><li><a href=#12-the-conan-2x-migration>1.2. The Conan 2.x migration</a></li><li><a href=#13-conan-2x-revisions-and-hashes>1.3. Conan 2.x revisions and hashes</a><ul><li><a href=#131-recipe-revisions-rrev>1.3.1. Recipe Revisions (RREV)</a></li><li><a href=#132-package-id>1.3.2. Package ID</a></li><li><a href=#133-package-revisions-prev>1.3.3. Package Revisions (PREV)</a></li><li><a href=#134-obtaining-different-revisions-in-linux-unix-and-windows>1.3.4. Obtaining different revisions in <del>Linux</del> Unix and Windows</a></li></ul></li><li><a href=#14-conan-integrations>1.4. Conan Integrations</a><ul><li><a href=#141-conan-toolchain-generator>1.4.1. Conan Toolchain generator</a></li><li><a href=#142-conan-deps-generator>1.4.2. Conan Deps generator</a><ul><li><a href=#xcodetoolchain-changes>XcodeToolchain changes</a></li></ul></li></ul></li><li><a href=#15-conan-apis>1.5. Conan APIs</a><ul><li><a href=#151-loading-a-conan-profile-via-the-conanapi>1.5.1. Loading a conan profile via the ConanAPI</a></li><li><a href=#152-computing-the-dependency-graph-via-the-conan-graph-api>1.5.2. Computing the dependency graph via the Conan Graph API</a></li></ul></li><li><a href=#16-deployers>1.6. Deployers</a></li></ul></li></ul><h1 id=1-conan-2x-migration-and-the-lessons-learned>1. Conan 2.x migration and the lessons learned</h1><p>In this blog post I will cover some key changes in Conan 2.x, how it works and some pitfalls. I do assume you are (somewhat) familiar with Conan already. In the first paragraphs I will share some backstory and then we will go into the technical details. Otherwise, skip to <a href=#the-conan-2x-migration>The Conan 2.x migration</a>.</p><h2 id=11-the-path-to-conan-2>1.1. The path to Conan 2</h2><p><a href=https://www.bimcollab.com/en/>BIMcollab</a> builds high‑performance, model-based collaboration software that helps project teams improve BIM model quality. One of those products, BIMcollab Zoom, is an IFC model viewer focused on fast navigation, model checking (e.g. clash detection), and issue tracking. The product has matured over roughly nine years (I’ve been fortunate to contribute during the last five), during which its architecture naturally evolved as capabilities, people, and expectations grew.</p><p>As with most long‑lived products, incremental ideas, framework shifts, and delivery pressure led to uneven investment in foundational refactoring. That healthy tension between delivering features and reshaping internals taught us a lot: we saw longer feedback cycles, more regression risk than we liked, and higher cognitive load in some areas of the codebase. Those signals clarified where to focus: testability, dependency hygiene, and repeatable environment setup.</p><p>A resilient architecture became the enabler. For BIMcollab Zoom that foundation starts with <a href=https://conan.io/>Conan</a>, our backbone for sharing native components and 3rd‑party libraries across products. When I joined, Conan was already present, but most external dependencies were still compiled outside and only wrapped afterward (Visual Studio and Xcode project files), making timely security updates and experimentation slower than we wanted.</p><p>The .NET Framework 4.8.1 upgrade across Windows projects created a natural “pause point” to reduce technical drag. We used it to standardize and automate more of the native dependency workflow—aiming for less manual orchestration, faster updates (e.g. OpenSSL), and predictable cross‑platform output. The first iteration replaced custom recipes with upstream Conan Center Index (CCI) ones: we cloned them into a local repo and drove source builds via a Python script encoding per‑package, per‑platform configuration. That script alone cut the effort to manage Conan libraries by roughly an order of magnitude. Developers still supervised platform builds manually—and occasionally rebooted between OSes—so it wasn’t the end state, but it materially improved reproducibility. It also unlocked building macOS Universal (FAT) binaries more easily (see <a href=/blog/how-to-build-macos-universal-binaries-with-conan-and-cmake/>How to build Macos Universal Binaries with Conan and CMake</a>). Adopting CCI upstream recipes further reduced cognitive load through cleaner, isolated settings and option models.</p><p>A later strategic move—migrating CI/CD from Jenkins to Azure DevOps—arrived just as Conan 1.x entered deprecation. Because Conan sits at the heart of the development workflow, we treated the platform migration and the Conan 2 transition as a single, well‑scoped modernization effort. Normally combining initiatives increases risk; here it consolidated context switching, aligned stakeholders, and accelerated convergence on a more maintainable pipeline.</p><p>Before we dive into the technical details I want to thank the Conan team for doing a great job!</p><h2 id=12-the-conan-2x-migration>1.2. The Conan 2.x migration</h2><p>Since the release of Conan 2.x there has been a migration guide listing all breaking changes, read <a href=https://docs.conan.io/1/conan_v2.html>Conan migration guide to 2.0</a>, and a lot has changed, because over time lessons are learned on how to improve processes and designs. In this case, the resulting changes were quite impactful, which for us meant a more costly migration due to using different APIs, updating recipes, changing scripts, adopting new behavior, and setting different environment variables.</p><p>Here&rsquo;s a list of changes that impacted us most:</p><ul><li>Package names must be lowercase, finally settling the debate on CamelCase names and aligning custom packages with CCI standards.</li><li>Package names with special characters like &lsquo;.&rsquo; are discouraged.</li><li>The new way of computing revisions and hash for packages.</li><li><a href=https://docs.conan.io/1/migrating_to_2.0/recipes.html#removed-imports-method>Removed imports() method</a> in favor of moving that to <code>generate()</code> or using</li><li>The new <a href=https://docs.conan.io/2/reference/extensions/deployers.html>Deployers Extension</a>, to support local development workflow.</li><li>The new Conan search CLI.</li><li>The new Toolchain and Deps generators.</li><li>New python APIs</li></ul><h2 id=13-conan-2x-revisions-and-hashes>1.3. Conan 2.x revisions and hashes</h2><p>The revised revision and hashing model in Conan 2.x paves the way for stronger immutability and reproducibility: any relevant change in the exported recipe inputs or the resulting packaged binary contents deterministically yields a new identifier.</p><p>Let&rsquo;s break down the three layers (RREV → Package ID → PREV), starting with the format:</p><pre tabindex=0><code>pkg_name/version#rrev:package_id#prev
+</code></pre><div class=center><figure><img sizes="(min-width: 35em) 720px, 100vw" srcset='/img/conan2x-list-revisions_hu_2cc980724076bb40.png 500w' src=/img/conan2x-list-revisions.png alt="Screenshot showing Conan 2.x list revisions output"><figcaption>Screenshot showing Conan 2.x list revisions output</figcaption></figure></div><h3 id=131-recipe-revisions-rrev>1.3.1. Recipe Revisions (RREV)</h3><p>The Recipe Revision (RREV) is a content hash over every exported recipe file: <code>conanfile.py</code>, <code>conandata.yml</code>, plus any files included via <code>exports</code> / <code>exports_sources</code> (patches, helper scripts, license files, etc.). Changing even a newline or whitespace in any exported file produces a new RREV. Files that are not exported (purely local build helpers) do not affect the RREV.</p><pre tabindex=0><code>pkg_name/version#rrev
+zstd/1.5.7#f98394e178ac97e2a7b445ea0ce6bcaf
+</code></pre><h3 id=132-package-id>1.3.2. Package ID</h3><p>The <a href=https://docs.conan.io/2/reference/binary_model/package_id.html>package_id</a> uniquely identifies a package <em>variant</em> (its configuration intent). Selected settings (e.g. <code>os=Linux</code>, <code>arch=x86_64</code>), options (e.g. <code>shared=True</code>), and the graph of requirements (including their RREVs) are combined to compute its hash. This separates “what we asked to build” from “what was actually built.”</p><p>You can still customize how variants collapse by overriding the <code>package_id()</code> method in a recipe—for example to ignore a compiler patch level—mirroring (and simplifying) behavior from Conan 1.x.</p><div class=center><figure><img sizes="(min-width: 35em) 720px, 100vw" srcset='/img/conan_package_id_full_hu_7145fbabd3cf5595.png 500w, /img/conan_package_id_full_hu_3577ae00c38b82d.png 800w' src=/img/conan_package_id_full.png alt="Screenshot showing Conan 2.x list output with package ids"><figcaption>Screenshot showing Conan 2.x list output with package ids</figcaption></figure></div><pre tabindex=0><code>pkg_name/version#rrev:package_id
+zstd/1.5.7#f98394e178ac97e2a7b445ea0ce6bcaf:43c10c705bb0f1d0030e597cb09a05ef5953fed9
+</code></pre><h3 id=133-package-revisions-prev>1.3.3. Package Revisions (PREV)</h3><p>The Package Revision (PREV) fingerprints a <em>realized</em> binary package. Conceptually:</p><ol><li>The RREV (recipe content hash)</li><li>The Package ID (variant hash)</li><li>A hash of the final packaged binary contents (after the build + package() step)</li></ol><p>The PREV only exists after a successful build of that variant. If you rebuild twice and produce byte‑identical packaged contents (including dependency artifacts copied or bundled), the PREV will be identical—enabling deterministic cache reuse across machines. If sources change, a dependency revision changes (affecting what gets packaged), or compiler flags alter the produced artifacts, the PREV changes.</p><pre tabindex=0><code>pkg_name/version#rrev:package_id#prev
+zstd/1.5.7#f98394e178ac97e2a7b445ea0ce6bcaf:43c10c705bb0f1d0030e597cb09a05ef5953fed9#3c8a259cc3c44b3a725342c5bb968f6d
+</code></pre><p>Mental model summary:</p><ul><li>RREV: Recipe inputs (what defines how to build)</li><li>Package ID: Configuration intent (settings + options + dependency graph signature)</li><li>PREV: Actual packaged bytes for that configuration</li></ul><h3 id=134-obtaining-different-revisions-in-linux-unix-and-windows>1.3.4. Obtaining different revisions in <del>Linux</del> Unix and Windows</h3><p>Now that we know how the new revisions are computed I want to highlight a pitfall I encountered, namely this known issue: <a href=https://docs.conan.io/2/knowledge/faq.html#error-obtaining-different-revisions-in-linux-and-windows>Obtaining different revisions in Linux and Windows</a>.</p><p>Knowing that hashes are content based, meaning newlines and whitespaces are accounted for in the hash, that also means that line-endings are included in the hash, changing the RREV. So when I was trying to consume zstd on macOS, after I already built it for Windows, conan said that it could not find a matching package, so I ran <code>conan graph explain</code>, awesome commandline tool btw, to get more insight in where the failing requirement was, giving me the following result:</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>$ conan graph explain <span class=s2>&#34;conanfile.py&#34;</span> --profile <span class=s2>&#34;apple.profile&#34;</span> -s <span class=nv>build_type</span><span class=o>=</span>Debug --version<span class=o>=</span>1.5.7
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>========</span> Retrieving and computing closest <span class=nv>binaries</span> <span class=o>========</span>
+</span></span><span class=line><span class=cl>Missing binary: zstd/1.5.7
+</span></span><span class=line><span class=cl>With conaninfo.txt <span class=o>(</span>package_id<span class=o>)</span>:
+</span></span><span class=line><span class=cl><span class=o>[</span>settings<span class=o>]</span>
+</span></span><span class=line><span class=cl><span class=nv>arch</span><span class=o>=</span>x86_64
+</span></span><span class=line><span class=cl><span class=nv>build_type</span><span class=o>=</span>Debug
+</span></span><span class=line><span class=cl><span class=nv>compiler</span><span class=o>=</span>apple-clang
+</span></span><span class=line><span class=cl>compiler.cppstd<span class=o>=</span><span class=m>23</span>
+</span></span><span class=line><span class=cl>compiler.libcxx<span class=o>=</span>libc++
+</span></span><span class=line><span class=cl>compiler.version<span class=o>=</span>15.0
+</span></span><span class=line><span class=cl><span class=nv>os</span><span class=o>=</span>Macos
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>Finding binaries in the cache
+</span></span><span class=line><span class=cl>Finding binaries in <span class=nv>remote</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=o>========</span> Closest <span class=nv>binaries</span> <span class=o>========</span>
+</span></span><span class=line><span class=cl>zstd/1.5.7
+</span></span><span class=line><span class=cl>  zstd/1.5.7#c85457d53c81839853cdfcdccfbe786b%1742228498.322 <span class=o>(</span>2025-03-17 16:21:38 UTC<span class=o>)</span>
+</span></span><span class=line><span class=cl>    zstd/1.5.7#c85457d53c81839853cdfcdccfbe786b:ecb7ce4359069b1fdf033c978da144c5c37fc00e
+</span></span><span class=line><span class=cl>      remote: 
+</span></span><span class=line><span class=cl>      settings: Windows, x86_64, Debug, msvc, 23, dynamic, Debug, <span class=m>194</span>
+</span></span><span class=line><span class=cl>      diff
+</span></span><span class=line><span class=cl>        platform
+</span></span><span class=line><span class=cl>          expected: <span class=nv>os</span><span class=o>=</span>Macos
+</span></span><span class=line><span class=cl>          existing: <span class=nv>os</span><span class=o>=</span>Windows
+</span></span><span class=line><span class=cl>        settings
+</span></span><span class=line><span class=cl>          expected: <span class=nv>compiler</span><span class=o>=</span>apple-clang, compiler.libcxx<span class=o>=</span>libc++, compiler.version<span class=o>=</span>15.0, compiler.runtime<span class=o>=</span>None, compiler.runtime_type<span class=o>=</span>None
+</span></span><span class=line><span class=cl>          existing: <span class=nv>compiler</span><span class=o>=</span>msvc, compiler.libcxx<span class=o>=</span>None, compiler.version<span class=o>=</span>194, compiler.runtime<span class=o>=</span>dynamic, compiler.runtime_type<span class=o>=</span>Debug
+</span></span><span class=line><span class=cl>        explanation: This binary belongs to another OS or Architecture, highly incompatible.
+</span></span></code></pre></div><p>There is quite allot of information in this output, but the way I read it is as following: &ldquo;Unable to find exact matching package for the given profile, though the closest match was this &lsquo;Windows&rsquo; package&rdquo;. So my first instinct was to run <code>conan list</code> to find out what packages we now have in our remote, telling that there are indeed packages for <code>zstd/1.5.7</code> for Windows and macOS, but that package for macOS has a different RREV (recipe revision) then the one for Windows.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl>$ conan list <span class=s2>&#34;zstd/1.5.7:*&#34;</span> -r<span class=o>=</span>remote
+</span></span><span class=line><span class=cl>remote
+</span></span><span class=line><span class=cl>  zstd        
+</span></span><span class=line><span class=cl>    zstd/1.5.7
+</span></span><span class=line><span class=cl>      revisions
+</span></span><span class=line><span class=cl>        760e2c11087c6517394d4626e15bc6aa <span class=o>(</span>2025-04-18 14:51:51 UTC<span class=o>)</span>
+</span></span><span class=line><span class=cl>          packages
+</span></span><span class=line><span class=cl>            84686b40e13ac9cce8e1c0900e6b00ce53d2ec1b
+</span></span><span class=line><span class=cl>              info
+</span></span><span class=line><span class=cl>                settings
+</span></span><span class=line><span class=cl>                  arch: x86_64
+</span></span><span class=line><span class=cl>                  build_type: Debug
+</span></span><span class=line><span class=cl>                  compiler: msvc
+</span></span><span class=line><span class=cl>                  compiler.runtime: dynamic
+</span></span><span class=line><span class=cl>                  compiler.runtime_type: Debug
+</span></span><span class=line><span class=cl>                  compiler.version: <span class=m>194</span>
+</span></span><span class=line><span class=cl>                  os: Windows
+</span></span><span class=line><span class=cl>                options
+</span></span><span class=line><span class=cl>                  build_programs: True
+</span></span><span class=line><span class=cl>                  shared: False
+</span></span><span class=line><span class=cl>                  threading: True
+</span></span><span class=line><span class=cl>            9d69f8152c7ae20456f943b00603dfd1254e33d6
+</span></span><span class=line><span class=cl>              info
+</span></span><span class=line><span class=cl>                settings
+</span></span><span class=line><span class=cl>                  arch: x86_64
+</span></span><span class=line><span class=cl>                  build_type: Release
+</span></span><span class=line><span class=cl>                  compiler: msvc
+</span></span><span class=line><span class=cl>                  compiler.runtime: dynamic
+</span></span><span class=line><span class=cl>                  compiler.runtime_type: Release
+</span></span><span class=line><span class=cl>                  compiler.version: <span class=m>194</span>
+</span></span><span class=line><span class=cl>                  os: Windows
+</span></span><span class=line><span class=cl>                options
+</span></span><span class=line><span class=cl>                  build_programs: True
+</span></span><span class=line><span class=cl>                  shared: False
+</span></span><span class=line><span class=cl>                  threading: True
+</span></span><span class=line><span class=cl>        082e3dbfe806c7d9f8c0ad59c28eba27 <span class=o>(</span>2025-04-18 14:52:18 UTC<span class=o>)</span> <span class=c1># &lt;&lt;&lt;&lt; Different package id </span>
+</span></span><span class=line><span class=cl>          packages
+</span></span><span class=line><span class=cl>            e21929983ebdf96278b3a059c2639c194a5fbfc2
+</span></span><span class=line><span class=cl>              info
+</span></span><span class=line><span class=cl>                settings
+</span></span><span class=line><span class=cl>                  arch: x86_64
+</span></span><span class=line><span class=cl>                  build_type: Release
+</span></span><span class=line><span class=cl>                  compiler: apple-clang
+</span></span><span class=line><span class=cl>                  compiler.version: 15.0
+</span></span><span class=line><span class=cl>                  os: Macos
+</span></span><span class=line><span class=cl>                options
+</span></span><span class=line><span class=cl>                  build_programs: True
+</span></span><span class=line><span class=cl>                  fPIC: True
+</span></span><span class=line><span class=cl>                  shared: False
+</span></span><span class=line><span class=cl>                  threading: True
+</span></span><span class=line><span class=cl>            ad39c16367de0053c3feeee333cfbe687f14b6f1
+</span></span><span class=line><span class=cl>              info
+</span></span><span class=line><span class=cl>                settings
+</span></span><span class=line><span class=cl>                  arch: x86_64
+</span></span><span class=line><span class=cl>                  build_type: Debug
+</span></span><span class=line><span class=cl>                  compiler: apple-clang
+</span></span><span class=line><span class=cl>                  compiler.version: 15.0
+</span></span><span class=line><span class=cl>                  os: Macos
+</span></span><span class=line><span class=cl>                options
+</span></span><span class=line><span class=cl>                  build_programs: True
+</span></span><span class=line><span class=cl>                  fPIC: True
+</span></span><span class=line><span class=cl>                  shared: False
+</span></span><span class=line><span class=cl>                  threading: True
+</span></span></code></pre></div><p>There appeared to be two different <code>package_id(s)</code> listed, though I was expecting only one, since I was building a package with exactly the same recipe. At least I thought so &mldr;. After searching the web it turned out that this is a known issue <a href=https://docs.conan.io/2/knowledge/faq.html#error-obtaining-different-revisions-in-linux-and-windows>Obtaining different revisions in Linux and Windows</a>, which due to line-endings, which are different on Unix than on Windows, two unique revisions for the same recipe are created. Fortunately, it is easy to solve by adding the <code>.gitattributes</code> file with the configuration to checkout files consistently on all platforms using the same line-endings. Note, if your repository contains binary content like archives, you have to add them to the <code>.gitattributes</code>, so git does not mess with the file trying to change the line-endings.</p><pre tabindex=0><code>* text eol=lf
+
+# Note: After applying these changes, test the repository thoroughly to ensure no unintended consequences. Verify that files are correctly checked out with consistent line endings and that binary files remain unaffected.
+*.zip binary
+*.tar binary
+*.tar.gz binary
+</code></pre><div class=highlight><pre tabindex=0 class=chroma><code class=language-bash data-lang=bash><span class=line><span class=cl><span class=c1># Run the following commands to tell Git to forget the files it’s tracking (without deleting them), and re-check them out from the current HEAD, which will apply the .gitattributes settings</span>
+</span></span><span class=line><span class=cl>git rm --cached -r .
+</span></span><span class=line><span class=cl>git reset --hard
+</span></span></code></pre></div><h2 id=14-conan-integrations>1.4. Conan Integrations</h2><p>The list <a href=https://docs.conan.io/2/integrations.html>Integrations</a> with Conan is growing, allowing Conan 2.x to support more and more build systems.
+These build systems are supported through the concept &ldquo;Generators&rdquo;. Generators transform configuration to build system specific output, which can be used for compilation using that tool, such as:</p><ul><li><a href=https://docs.conan.io/2/integrations/cmake.html>CMake</a></li><li><a href=https://docs.conan.io/2/integrations/visual_studio.html>Visual Studio</a></li><li><a href=https://docs.conan.io/2/integrations/xcode.html>Xcode</a></li><li><a href=https://docs.conan.io/2/integrations/bazel.html>Bazel</a></li><li><a href=https://docs.conan.io/2/integrations/meson.html>Meson</a></li><li>&mldr;</li></ul><p>In the following two sections I&rsquo;ll explain how Integrations work through the types generators that exist.</p><h3 id=141-conan-toolchain-generator>1.4.1. Conan Toolchain generator</h3><p>Toolchain generators transform the conan <code>[settings]</code>, such that the target build system can consume build settings for compilation. Think about <code>build_type</code> being transformed to a Visual Studio configuration or what compiler or cppstd to use. These configurations are outputted in files that can be interpreted by your IDE or build system, helping you as an engineer, by not having to configure all these properties by hand 🚀.</p><h3 id=142-conan-deps-generator>1.4.2. Conan Deps generator</h3><p>Deps generators materialize the resolved dependency graph into build-system–specific metadata: include dirs, lib dirs, link flags, defines, frameworks, system libs, and (for multi‑config toolchains) per‑configuration variants. Instead of manually wiring each dependency, a Deps generator emits structured files (e.g. <code>conandeps.xcconfig</code>, MSBuild <code>.props</code> / <code>.targets</code>, or CMake helper files) that your build system or IDE can include so targets inherit the correct transitive usage requirements in order. In short: Toolchain answers “how to compile” (compiler/runtimes/language level); Deps answers “what to consume and link” (headers, libraries, flags) for that graph—removing hand-maintained project drift.</p><h4 id=xcodetoolchain-changes>XcodeToolchain changes</h4><p>When integrating the new XcodeToolchain I found that it works slightly different than with conan 1x. In the <code>*.xcconfig</code> config files for each variable a filter is added, which sets the target cpu architecture, e.g. <code>x86_64</code> or <code>armv8</code>.</p><div class=highlight><pre tabindex=0 class=chroma><code class=language-py data-lang=py><span class=line><span class=cl><span class=kn>from</span> <span class=nn>conan</span> <span class=kn>import</span> <span class=n>ConanFile</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>conan.tools.apple</span> <span class=kn>import</span> <span class=n>XcodeToolchain</span><span class=p>,</span> <span class=n>XcodeDeps</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=k>class</span> <span class=nc>MyAwesomeRecipeConan</span><span class=p>(</span><span class=n>ConanFile</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>  <span class=n>author</span> <span class=o>=</span> <span class=s2>&#34;ovaar&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=n>license</span> <span class=o>=</span> <span class=s2>&#34;Closed&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=n>description</span> <span class=o>=</span> <span class=s2>&#34;&#34;</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>settings</span> <span class=o>=</span> <span class=s2>&#34;os&#34;</span><span class=p>,</span> <span class=s2>&#34;build_type&#34;</span><span class=p>,</span> <span class=s2>&#34;arch&#34;</span><span class=p>,</span> <span class=s2>&#34;compiler&#34;</span>
+</span></span><span class=line><span class=cl>  <span class=n>options</span> <span class=o>=</span> <span class=p>{}</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=n>no_copy_source</span> <span class=o>=</span> <span class=kc>True</span>
+</span></span><span class=line><span class=cl>  <span class=n>build_policy</span> <span class=o>=</span> <span class=s2>&#34;never&#34;</span> <span class=c1># This package cannot be built from sources, it is always created with conan export-pkg</span>
+</span></span><span class=line><span class=cl>  <span class=n>virtualbuildenv</span> <span class=o>=</span> <span class=kc>False</span>
+</span></span><span class=line><span class=cl>  <span class=n>virtualrunenv</span> <span class=o>=</span> <span class=kc>False</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>  <span class=k>def</span> <span class=nf>generate</span><span class=p>(</span><span class=bp>self</span><span class=p>):</span>
+</span></span><span class=line><span class=cl>    <span class=k>if</span> <span class=bp>self</span><span class=o>.</span><span class=n>settings</span><span class=o>.</span><span class=n>os</span> <span class=o>==</span> <span class=s2>&#34;Macos&#34;</span><span class=p>:</span>
+</span></span><span class=line><span class=cl>      <span class=n>tc</span> <span class=o>=</span> <span class=n>XcodeToolchain</span><span class=p>(</span><span class=bp>self</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>      <span class=n>tc</span><span class=o>.</span><span class=n>generate</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl>      <span class=n>deps</span> <span class=o>=</span> <span class=n>XcodeDeps</span><span class=p>(</span><span class=bp>self</span><span class=p>)</span>
+</span></span><span class=line><span class=cl>      <span class=n>deps</span><span class=o>.</span><span class=n>generate</span><span class=p>()</span>
+</span></span></code></pre></div><div class=highlight><pre tabindex=0 class=chroma><code class=language-c data-lang=c><span class=line><span class=cl><span class=n>HEADER_SEARCH_PATHS</span><span class=p>[</span><span class=n>arch</span><span class=o>=</span><span class=n>x86_64</span><span class=p>]</span> <span class=o>=</span> <span class=err>$</span><span class=p>(</span><span class=n>SRCROOT</span><span class=p>)</span><span class=o>/</span><span class=n>conan_deps</span><span class=o>/</span><span class=n>zstd</span><span class=o>/</span><span class=n>include</span>
+</span></span><span class=line><span class=cl><span class=n>LIBRARY_SEARCH_PATHS</span><span class=p>[</span><span class=n>arch</span><span class=o>=</span><span class=n>x86_64</span><span class=p>]</span> <span class=o>=</span> <span class=err>$</span><span class=p>(</span><span class=n>SRCROOT</span><span class=p>)</span><span class=o>/</span><span class=n>conan_deps</span><span class=o>/</span><span class=n>zstd</span><span class=o>/</span><span class=n>lib</span><span class=o>/</span><span class=n>Debug</span><span class=o>/</span><span class=n>x86_64</span>
+</span></span><span class=line><span class=cl><span class=n>OTHER_LDFLAGS</span><span class=p>[</span><span class=n>arch</span><span class=o>=</span><span class=n>x86_64</span><span class=p>]</span> <span class=o>=</span> <span class=o>-</span><span class=n>lzstd</span> <span class=o>-</span><span class=n>Wl</span><span class=p>,</span><span class=o>-</span><span class=n>rpath</span><span class=p>,</span><span class=err>$</span><span class=p>(</span><span class=n>SRCROOT</span><span class=p>)</span><span class=o>/</span><span class=n>conan_deps</span><span class=o>/</span><span class=n>zstd</span><span class=o>/</span><span class=n>lib</span><span class=o>/</span><span class=n>Debug</span><span class=o>/</span><span class=n>x86_64</span>
+</span></span><span class=line><span class=cl><span class=n>GCC_PREPROCESSOR_DEFINITIONS</span><span class=p>[</span><span class=n>arch</span><span class=o>=</span><span class=n>x86_64</span><span class=p>]</span> <span class=o>=</span> <span class=n>ZSTD_MULTITHREAD</span> <span class=n>DEBUG</span><span class=o>=</span><span class=mi>1</span>
+</span></span></code></pre></div><p>In the context of building Universal (FAT) binaries on macOS, on conan 1x you could cheat the system by building a single package, as a FAT binary, but export it as only one of the target architectures like <code>armv8</code>. This would reduce the need to have to build and store two packages, but because of the filter in the <code>*.xcconfig</code> files when consuming that <code>armv8</code> package on an intel machine all those settings are not applied in Xcode, failing the build.</p><p>To be able to get around this two Universal (FAT) binary packages are exported with the target architecture <code>arch=armv8</code> and <code>arch=x86_64</code> separately, until that project is migrated to cmake.</p><pre tabindex=0><code>                   +------------------------+
+                   | conan_config.xcconfig  |  &lt;--- Entry point for Xcode
+                   +-----------+------------+
+                               |
+          +--------------------+--------------------------+
+          |                                               |
++-------------------------+                    +-----------------------------+
+| conantoolchain.xcconfig |  &lt;--- Aggregates   | conan_global_flags.xcconfig | (optional)
++------------+------------+        per-config  +-----------------------------+
+             |
+     +-------+------------------------------------------+
+     |                                                  |
++----------------------------------------+  +----------------------------------------+
+| conantoolchain_release_x86_64.xcconfig |  | conantoolchain_debug_x86_64.xcconfig   |
++----------------------------------------+  +----------------------------------------+
+</code></pre><p>You can solve this by:</p><ol><li>Building the package twice for <code>x86_64</code> and <code>armv8</code> separately;<ul><li>To either combine them later using lipo, see <a href=/blog/how-to-build-macos-universal-binaries-with-conan-and-cmake/>How to build Macos Universal Binaries with Conan and CMake</a></li><li>Or publish it twice for both platforms as FAT binaries, which we chose to do up until the point where the project is migrated to CMake.</li></ul></li><li>Specify in your conan profile multiple archs, but this, at the time of writing, only implemented for CMake.</li></ol><pre tabindex=0><code>[settings]
+    os=Macos
+    arch=armv8|x86_64 # sort alphabetically
+</code></pre><h2 id=15-conan-apis>1.5. Conan APIs</h2><p>In this section I&rsquo;ll be demonstrating, using a few examples, how to programmatically use some of the conan 2.x APIs available.</p><h3 id=151-loading-a-conan-profile-via-the-conanapi>1.5.1. Loading a conan profile via the ConanAPI</h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-py data-lang=py><span class=line><span class=cl><span class=kn>import</span> <span class=nn>pprint</span>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=nn>json</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>pathlib</span> <span class=kn>import</span> <span class=n>Path</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>pprint</span> <span class=kn>import</span> <span class=n>pprint</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>conan.api.conan_api</span> <span class=kn>import</span> <span class=n>ConanAPI</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>conan_api</span><span class=p>:</span> <span class=n>ConanAPI</span> <span class=o>=</span> <span class=n>ConanAPI</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>remote</span> <span class=o>=</span> <span class=n>conan_api</span><span class=o>.</span><span class=n>remotes</span><span class=o>.</span><span class=n>get</span><span class=p>(</span><span class=s2>&#34;conancenter&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=n>profile</span> <span class=o>=</span> <span class=n>conan_api</span><span class=o>.</span><span class=n>profiles</span><span class=o>.</span><span class=n>get_profile</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=p>[</span><span class=nb>str</span><span class=p>(</span><span class=n>Path</span><span class=p>(</span><span class=vm>__file__</span><span class=p>)</span><span class=o>.</span><span class=n>parent</span> <span class=o>/</span> <span class=s2>&#34;msvc.profile&#34;</span><span class=p>)],</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>serialized</span> <span class=o>=</span> <span class=n>profile</span><span class=o>.</span><span class=n>serialize</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=n>pprint</span><span class=p>(</span><span class=n>json</span><span class=o>.</span><span class=n>dumps</span><span class=p>(</span><span class=n>serialized</span><span class=p>,</span> <span class=n>indent</span><span class=o>=</span><span class=mi>4</span><span class=p>))</span>
+</span></span></code></pre></div><p><strong>Output:</strong></p><div class=highlight><pre tabindex=0 class=chroma><code class=language-json data-lang=json><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;settings&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;os&#34;</span><span class=p>:</span> <span class=s2>&#34;Windows&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;arch&#34;</span><span class=p>:</span> <span class=s2>&#34;x86_64&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;compiler&#34;</span><span class=p>:</span> <span class=s2>&#34;msvc&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;build_type&#34;</span><span class=p>:</span> <span class=s2>&#34;Release&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;compiler.cppstd&#34;</span><span class=p>:</span> <span class=s2>&#34;23&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;compiler.version&#34;</span><span class=p>:</span> <span class=s2>&#34;194&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;compiler.runtime&#34;</span><span class=p>:</span> <span class=s2>&#34;dynamic&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;compiler.runtime_type&#34;</span><span class=p>:</span> <span class=s2>&#34;Release&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=p>},</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;package_settings&#34;</span><span class=p>:</span> <span class=p>{},</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;options&#34;</span><span class=p>:</span> <span class=p>{},</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;tool_requires&#34;</span><span class=p>:</span> <span class=p>{},</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;conf&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>      <span class=nt>&#34;tools.microsoft.msbuild:vs_version&#34;</span><span class=p>:</span> <span class=mi>17</span>
+</span></span><span class=line><span class=cl>    <span class=p>},</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;build_env&#34;</span><span class=p>:</span> <span class=s2>&#34;&#34;</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><h3 id=152-computing-the-dependency-graph-via-the-conan-graph-api>1.5.2. Computing the dependency graph via the Conan Graph API</h3><div class=highlight><pre tabindex=0 class=chroma><code class=language-py data-lang=py><span class=line><span class=cl><span class=kn>import</span> <span class=nn>pprint</span>
+</span></span><span class=line><span class=cl><span class=kn>import</span> <span class=nn>json</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>pathlib</span> <span class=kn>import</span> <span class=n>Path</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>pprint</span> <span class=kn>import</span> <span class=n>pprint</span>
+</span></span><span class=line><span class=cl><span class=kn>from</span> <span class=nn>conan.api.conan_api</span> <span class=kn>import</span> <span class=n>ConanAPI</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>conan_api</span><span class=p>:</span> <span class=n>ConanAPI</span> <span class=o>=</span> <span class=n>ConanAPI</span><span class=p>()</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>remote</span> <span class=o>=</span> <span class=n>conan_api</span><span class=o>.</span><span class=n>remotes</span><span class=o>.</span><span class=n>get</span><span class=p>(</span><span class=s2>&#34;conancenter&#34;</span><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=n>profile</span> <span class=o>=</span> <span class=n>conan_api</span><span class=o>.</span><span class=n>profiles</span><span class=o>.</span><span class=n>get_profile</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=p>[</span><span class=nb>str</span><span class=p>(</span><span class=n>Path</span><span class=p>(</span><span class=vm>__file__</span><span class=p>)</span><span class=o>.</span><span class=n>parent</span> <span class=o>/</span> <span class=s2>&#34;msvc.profile&#34;</span><span class=p>)],</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl><span class=n>recipe_path</span> <span class=o>=</span> <span class=n>Path</span><span class=p>(</span><span class=vm>__file__</span><span class=p>)</span><span class=o>.</span><span class=n>parent</span> <span class=o>/</span> <span class=s2>&#34;recipes&#34;</span> <span class=o>/</span> <span class=s2>&#34;zstd&#34;</span> <span class=o>/</span> <span class=s2>&#34;all&#34;</span> <span class=o>/</span> <span class=s2>&#34;conanfile.py&#34;</span>
+</span></span><span class=line><span class=cl><span class=n>deps_graph</span> <span class=o>=</span> <span class=n>conan_api</span><span class=o>.</span><span class=n>graph</span><span class=o>.</span><span class=n>load_graph_consumer</span><span class=p>(</span>
+</span></span><span class=line><span class=cl>    <span class=n>path</span><span class=o>=</span><span class=nb>str</span><span class=p>(</span><span class=n>recipe_path</span><span class=p>),</span>
+</span></span><span class=line><span class=cl>    <span class=n>name</span><span class=o>=</span><span class=s2>&#34;zstd&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>version</span><span class=o>=</span><span class=s2>&#34;1.5.7&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>user</span><span class=o>=</span><span class=kc>None</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>channel</span><span class=o>=</span><span class=kc>None</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>profile_host</span><span class=o>=</span><span class=n>profile</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>profile_build</span><span class=o>=</span><span class=n>profile</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>lockfile</span><span class=o>=</span><span class=kc>None</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>remotes</span><span class=o>=</span><span class=p>[</span><span class=n>remote</span><span class=p>],</span>
+</span></span><span class=line><span class=cl>    <span class=n>update</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>    <span class=n>check_updates</span><span class=o>=</span><span class=kc>False</span><span class=p>,</span>
+</span></span><span class=line><span class=cl><span class=p>)</span>
+</span></span><span class=line><span class=cl>
+</span></span><span class=line><span class=cl><span class=n>serialized</span> <span class=o>=</span> <span class=n>deps_graph</span><span class=o>.</span><span class=n>serialize</span><span class=p>()</span>
+</span></span><span class=line><span class=cl><span class=n>pprint</span><span class=p>(</span><span class=n>json</span><span class=o>.</span><span class=n>dumps</span><span class=p>(</span><span class=n>serialized</span><span class=p>,</span> <span class=n>indent</span><span class=o>=</span><span class=mi>4</span><span class=p>))</span>
+</span></span></code></pre></div><p><strong>Output:</strong></p><div class=highlight><pre tabindex=0 class=chroma><code class=language-json data-lang=json><span class=line><span class=cl><span class=err>========</span> <span class=err>Computing</span> <span class=err>dependency</span> <span class=err>graph</span> <span class=err>========</span>
+</span></span><span class=line><span class=cl><span class=p>{</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;nodes&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&#34;0&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;ref&#34;</span><span class=p>:</span> <span class=s2>&#34;zstd/1.5.7&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;id&#34;</span><span class=p>:</span> <span class=s2>&#34;0&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;recipe&#34;</span><span class=p>:</span> <span class=s2>&#34;Consumer&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;package_id&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;prev&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;rrev&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;rrev_timestamp&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;prev_timestamp&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;remote&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;binary_remote&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;build_id&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;binary&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;invalid_build&#34;</span><span class=p>:</span> <span class=kc>false</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;info_invalid&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;name&#34;</span><span class=p>:</span> <span class=s2>&#34;zstd&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;user&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;channel&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;url&#34;</span><span class=p>:</span> <span class=s2>&#34;https://github.com/conan-io/conan-center-index&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;license&#34;</span><span class=p>:</span> <span class=s2>&#34;BSD-3-Clause&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;author&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;description&#34;</span><span class=p>:</span> <span class=s2>&#34;Zstandard - Fast real-time compression algorithm&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;homepage&#34;</span><span class=p>:</span> <span class=s2>&#34;https://github.com/facebook/zstd&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;build_policy&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;upload_policy&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;revision_mode&#34;</span><span class=p>:</span> <span class=s2>&#34;hash&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;provides&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;deprecated&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;win_bash&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;win_bash_run&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;default_options&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;shared&#34;</span><span class=p>:</span> <span class=kc>false</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;fPIC&#34;</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;threading&#34;</span><span class=p>:</span> <span class=kc>true</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;build_programs&#34;</span><span class=p>:</span> <span class=kc>true</span>
+</span></span><span class=line><span class=cl>            <span class=p>},</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;options_description&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;version&#34;</span><span class=p>:</span> <span class=s2>&#34;1.5.7&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;topics&#34;</span><span class=p>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>                <span class=s2>&#34;zstandard&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=s2>&#34;compression&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=s2>&#34;algorithm&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=s2>&#34;decoder&#34;</span>
+</span></span><span class=line><span class=cl>            <span class=p>],</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;package_type&#34;</span><span class=p>:</span> <span class=s2>&#34;static-library&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;languages&#34;</span><span class=p>:</span> <span class=p>[],</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;settings&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;os&#34;</span><span class=p>:</span> <span class=s2>&#34;Windows&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;arch&#34;</span><span class=p>:</span> <span class=s2>&#34;x86_64&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;compiler&#34;</span><span class=p>:</span> <span class=s2>&#34;msvc&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;compiler.runtime&#34;</span><span class=p>:</span> <span class=s2>&#34;dynamic&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;compiler.runtime_type&#34;</span><span class=p>:</span> <span class=s2>&#34;Release&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;compiler.version&#34;</span><span class=p>:</span> <span class=s2>&#34;194&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;build_type&#34;</span><span class=p>:</span> <span class=s2>&#34;Release&#34;</span>
+</span></span><span class=line><span class=cl>            <span class=p>},</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;options&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;build_programs&#34;</span><span class=p>:</span> <span class=s2>&#34;True&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;shared&#34;</span><span class=p>:</span> <span class=s2>&#34;False&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;threading&#34;</span><span class=p>:</span> <span class=s2>&#34;True&#34;</span>
+</span></span><span class=line><span class=cl>            <span class=p>},</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;options_definitions&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;shared&#34;</span><span class=p>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>                    <span class=s2>&#34;True&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=s2>&#34;False&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=p>],</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;threading&#34;</span><span class=p>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>                    <span class=s2>&#34;True&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=s2>&#34;False&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=p>],</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;build_programs&#34;</span><span class=p>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>                    <span class=s2>&#34;True&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=s2>&#34;False&#34;</span>
+</span></span><span class=line><span class=cl>                <span class=p>]</span>
+</span></span><span class=line><span class=cl>            <span class=p>},</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;generators&#34;</span><span class=p>:</span> <span class=p>[],</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;python_requires&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;system_requires&#34;</span><span class=p>:</span> <span class=p>{},</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;recipe_folder&#34;</span><span class=p>:</span> <span class=s2>&#34;recipes\\\\zstd\\\\all&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;source_folder&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;build_folder&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;generators_folder&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;package_folder&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;immutable_package_folder&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;cpp_info&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                <span class=nt>&#34;root&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;includedirs&#34;</span><span class=p>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>                        <span class=s2>&#34;include&#34;</span>
+</span></span><span class=line><span class=cl>                    <span class=p>],</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;srcdirs&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;libdirs&#34;</span><span class=p>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>                        <span class=s2>&#34;lib&#34;</span>
+</span></span><span class=line><span class=cl>                    <span class=p>],</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;resdirs&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;bindirs&#34;</span><span class=p>:</span> <span class=p>[</span>
+</span></span><span class=line><span class=cl>                        <span class=s2>&#34;bin&#34;</span>
+</span></span><span class=line><span class=cl>                    <span class=p>],</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;builddirs&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;frameworkdirs&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;system_libs&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;frameworks&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;libs&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;defines&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;cflags&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;cxxflags&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;sharedlinkflags&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;exelinkflags&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;objects&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;sysroot&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;requires&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;properties&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;exe&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;type&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;location&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;link_location&#34;</span><span class=p>:</span> <span class=kc>null</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>                    <span class=nt>&#34;languages&#34;</span><span class=p>:</span> <span class=kc>null</span>
+</span></span><span class=line><span class=cl>                <span class=p>}</span>
+</span></span><span class=line><span class=cl>            <span class=p>},</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;conf_info&#34;</span><span class=p>:</span> <span class=p>{},</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;label&#34;</span><span class=p>:</span> <span class=s2>&#34;conanfile.py (zstd/1.5.7)&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;vendor&#34;</span><span class=p>:</span> <span class=kc>false</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;dependencies&#34;</span><span class=p>:</span> <span class=p>{},</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;context&#34;</span><span class=p>:</span> <span class=s2>&#34;host&#34;</span><span class=p>,</span>
+</span></span><span class=line><span class=cl>            <span class=nt>&#34;test&#34;</span><span class=p>:</span> <span class=kc>false</span>
+</span></span><span class=line><span class=cl>        <span class=p>}</span>
+</span></span><span class=line><span class=cl>    <span class=p>},</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;root&#34;</span><span class=p>:</span> <span class=p>{</span>
+</span></span><span class=line><span class=cl>        <span class=nt>&#34;0&#34;</span><span class=p>:</span> <span class=s2>&#34;zstd/1.5.7&#34;</span>
+</span></span><span class=line><span class=cl>    <span class=p>},</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;overrides&#34;</span><span class=p>:</span> <span class=p>{},</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;resolved_ranges&#34;</span><span class=p>:</span> <span class=p>{},</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;replaced_requires&#34;</span><span class=p>:</span> <span class=p>{},</span>
+</span></span><span class=line><span class=cl>    <span class=nt>&#34;error&#34;</span><span class=p>:</span> <span class=kc>null</span>
+</span></span><span class=line><span class=cl><span class=p>}</span>
+</span></span></code></pre></div><h2 id=16-deployers>1.6. Deployers</h2><p><a href=https://docs.conan.io/2/reference/extensions/deployers.html>Deployers</a> is a new helper utility added in conan 2.x that helps with copying dependencies from the conan local cache to the users workspace directory. This can be helpfull to support local development, resulting in a conan-independant project.</p><p>Having large dependencies, like for example <code>boost</code>, can quickly add up time when using deployers. Luckly, there&rsquo;s an option for creating symlinks, which can be set in the profile using <code>tools.deployer:symlinks=True</code>:</p><pre tabindex=0><code># msvc.profile
+[settings]
+  arch=x86_64
+  ...
+[conf]
+tools.deployer:symlinks=True
+</code></pre><p>Things I still want to explore are:</p><ul><li><a href=https://docs.conan.io/2/reference/workspace_files.html>Conan workspace</a></li><li>Setting up <a href=https://docs.conan.io/2/ci_tutorial/packages_pipeline/multi_configuration.html>multi configuration CI pipeline</a></li></ul></article></main><footer><footer><hr><div class=footer-content><div class=footer-info><p><small>Copyright &#169; 2020 Ovaar. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</small></p><p><small>created with <a href=https://gohugo.io>Hugo</a>,
+<a href=https://github.com/andybrewer/mvp>mvp.css</a>.</small></p></div><div class=footer-social><div class=social><a href=https://github.com/ovaar target=_blank rel="noopener noreferrer" aria-label="github profile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37.0 00-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44.0 0020 4.77 5.07 5.07.0 0019.91 1S18.73.65 16 2.48a13.38 13.38.0 00-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07.0 005 4.77 5.44 5.44.0 003.5 8.55c0 5.42 3.3 6.61 6.44 7A3.37 3.37.0 009 18.13V22"/></svg>
+</a><a href=https://www.linkedin.com/in/thomas-reynders-6bb57057/ target=_blank rel="noopener noreferrer" aria-label="linkedin profile"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 8a6 6 0 016 6v7h-4v-7a2 2 0 00-2-2 2 2 0 00-2 2v7h-4v-7a6 6 0 016-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg></a></div></div></div></footer></footer></body></html>

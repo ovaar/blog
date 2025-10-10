@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Perf on Ovaar - Software engineering blog</title><link>/tags/perf/</link><description>Recent content in Perf on Ovaar - Software engineering blog</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>2020 Ovaar. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Wed, 14 Oct 2020 00:00:00 +0000</lastBuildDate><atom:link href="/tags/perf/index.xml" rel="self" type="application/rss+xml"/><item><title>C# Performance - Profiling introduction</title><link>/blog/csharp-performance-profiling-introduction/</link><pubDate>Wed, 14 Oct 2020 00:00:00 +0000</pubDate><guid>/blog/csharp-performance-profiling-introduction/</guid><description>&lt;p&gt;Welcome! In this blog series I will share some of the knowledge I gained when doing performance optimizations for a project some time ago. Optimizing code for performance requires good knowledge of the fundamental concepts of computer architecture. In this first blog post I will explain about software profiling, some of the computer architecture concepts and my personal experience what worked for my and what did not. In later post(s) I will go more into detail in how to optimize code for performance.&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://media1.tenor.com/images/9a8cd260ef1cc7f1544c65530966ee93/tenor.gif?itemid=5593963" alt="high performance"&gt;&lt;/p&gt;
+&lt;p&gt;About a year ago I was challenged to improve the overall application performance of a C# WPF application. The application was built for a steel plate inspection system. Using ultrasound, the system is capable of detecting defects in steel plates. For your imagination, these steel plate could go up to 40 by 5 meters (pretty huge). One of the main functions of the application is to receive and parse streams of data which were send by an FPGA via TCP. After parsing the characteristics of a &amp;ldquo;shot&amp;rdquo; were being calculated and a 3D model of the steel plate is updated and displayed in near real-time.&lt;/p&gt;
+&lt;p&gt;When I joined this project, it was already running for about two years and the first prototype was built. This machine contained 1 FPGA and a single transceiver probe. At that time there were already signs of performance issues. But before we could start improving the software, we had to polish the existing application for its first customer. Because of time pressure the machine needed to be sold and the next generation had to be built as well. This next generation machine contained 20 FPGA&amp;rsquo;s and 80 transceiver probes. These requirements were getting more serious but theoretically this would not be a problem.&lt;/p&gt;
+&lt;p&gt;Some time went by and more and more code were added, the customers wishes changed, the principal system architect left the project and no replacement was ever found. Engineers with different ideas have come and gone. The &amp;ldquo;legacy&amp;rdquo; code base was dying to get an update! I remember when connecting more than a single FPGA device the software would completely freeze the computer. We were hitting a wall! The software architecture was not scalable at all&amp;hellip;&lt;/p&gt;
+&lt;p&gt;You might have found yourself in such a situation. When experiencing performance issues, you will find yourself very quickly in a new world with software profilers. Profilers such as the one embedded in Microsoft Visual Studio, &lt;a href="https://software.intel.com/content/www/us/en/develop/tools/vtune-profiler.html"&gt;Intel VTune Profiler&lt;/a&gt;, Reshaper tools such as &lt;a href="https://www.jetbrains.com/profiler/"&gt;dotTrace&lt;/a&gt; or &lt;a href="https://www.jetbrains.com/dotmemory/"&gt;dotMemory&lt;/a&gt;.&lt;/p&gt;
+&lt;br /&gt;
+&lt;h3 id="profiling"&gt;Profiling&lt;/h3&gt;
+&lt;p&gt;Software profiling is about getting metrics/samples about the application or system-wide used resources like CPU, RAM or GPU. These metrics can give insight in how fast code is executed, what memory is being allocated, how well the code is being executed in parallel, etc&amp;hellip;&lt;/p&gt;
+&lt;p&gt;Sampling can be done in two different ways: User mode Sampling and Hardware Event-Base Sampling (Interrupt). In order to use User Mode sampling the profiling application has to inject and recompile the program in order to get the application metrics. Using this method, the metrics will be time based and acquiring these metrics has about 5% overhead on the overall system performance.&lt;/p&gt;
+&lt;p&gt;On the other hand, Hardware Event-Based Sampling uses the PMU. Every modern CPU nowadays contains a Performance Monitoring Unit (PMU). The PMU can sample data per number of cpu-cycles or can be triggered when a specific instruction is executed. Since this is hardware embedded on the CPU it is able capture metrics of the whole system. and it has a minimal performance overhead.&lt;/p&gt;
+&lt;p&gt;Below a small comparison table between these two sampling methods.&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;User mode Sampling&lt;/th&gt;
+&lt;th&gt;Hardware Event-Based Sampling&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;Time-Based Sampling (TBS)&lt;/td&gt;
+&lt;td&gt;Performance Monitoring Unit (PMU)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;~5% overhead&lt;/td&gt;
+&lt;td&gt;Minimum overhead&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Application resources only&lt;/td&gt;
+&lt;td&gt;System-wide resources&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;Inject code into binary&lt;/td&gt;
+&lt;td&gt;Uses system interrupts&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;br /&gt;
+&lt;h4 id="hotspots"&gt;Hotspots&lt;/h4&gt;
+&lt;p&gt;Code &amp;ldquo;hotspots&amp;rdquo; refer to functions in the call stack which are executed very often. Reducing the execution time or the amount of times executing the operation can result in faster overall execution time of your program, by making room for other operations.&lt;/p&gt;
+&lt;p&gt;When it comes to finding these hotspots, I personally prefer using Intel VTune Profiler&amp;rsquo;s &lt;em&gt;Hotspot analysis&lt;/em&gt;. Intel VTune has a clear overview, visualizing the top hotspots and allowing the user to easily traverse the call stack.&lt;/p&gt;
+&lt;br /&gt;
+&lt;h4 id="memory-allocation"&gt;Memory Allocation&lt;/h4&gt;
+&lt;p&gt;Allocating new memory reserves a block of memory on the stack, heap or virtual memory. Both the stack and heap are physically located in RAM (Random Access Memory). If you are new to the concepts stack or heap or just looking for a refresher; The stack is a fixed size block of memory reserved for the execution of a thread. In processes each thread has its own stack. A stack is a LIFO (last in first out) and consists of stack frames. On each function call a new stack frame, containing local variables, is added. When a function exits the stack frame is &lt;code&gt;popped&lt;/code&gt; from the stack, releasing the allocated memory automatically. Due to the fixed size of the stack it is possible to run out of memory, this results in a StackOverflow Exception. The stack size is determined at application startup and depends on the system architecture and operating system.&lt;/p&gt;
+&lt;p&gt;The heap is memory reserved space for dynamic memory allocations. Dynamic allocations have a different lifecycle that needs to be managed by the application runtime. This can be manually where the program needs to explicitly free the memory by using &lt;code&gt;free&lt;/code&gt; or &lt;code&gt;delete&lt;/code&gt; or by a Garbage Collector, like in .NET. Unlike the stack that can throw an exception when it overflows, the heap is able to also make use of virtual memory. Virtual memory is memory that can be located on a hard disk, which has considerably slower access times than reading from RAM (latency). The process of running out of RAM memory and making use of virtual memory is called &lt;em&gt;swapping&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;To put the latency numbers in perspective.&lt;/p&gt;
+&lt;pre tabindex="0"&gt;&lt;code&gt;Latency Comparison Numbers (~2012)
+----------------------------------
+L1 cache reference 0.5 ns
+Branch mispredict 5 ns
+L2 cache reference 7 ns 14x L1 cache
+Mutex lock/unlock 25 ns
+Main memory reference 100 ns 20x L2 cache, 200x L1 cache
+Compress 1K bytes with Zippy 3,000 ns 3 us
+Send 1K bytes over 1 Gbps network 10,000 ns 10 us
+Read 4K randomly from SSD* 150,000 ns 150 us ~1GB/sec SSD
+Read 1 MB sequentially from memory 250,000 ns 250 us
+Round trip within same datacenter 500,000 ns 500 us
+Read 1 MB sequentially from SSD* 1,000,000 ns 1,000 us 1 ms ~1GB/sec SSD, 4X memory
+Disk seek 10,000,000 ns 10,000 us 10 ms 20x datacenter roundtrip
+Read 1 MB sequentially from disk 20,000,000 ns 20,000 us 20 ms 80x memory, 20X SSD
+Send packet CA-&amp;gt;Netherlands-&amp;gt;CA 150,000,000 ns 150,000 us 150 ms
+Notes
+-----
+1 ns = 10^-9 seconds
+1 us = 10^-6 seconds = 1,000 ns
+1 ms = 10^-3 seconds = 1,000 us = 1,000,000 ns
+Credit
+------
+By Jeff Dean: http://research.google.com/people/jeff/
+Originally by Peter Norvig: http://norvig.com/21-days.html#answers
+Contributions
+-------------
+&amp;#39;Humanized&amp;#39; comparison: https://gist.github.com/hellerbarde/2843375
+Visual comparison chart: http://i.imgur.com/k0t1e.png
+&lt;/code&gt;&lt;/pre&gt;&lt;p&gt;Allocating memory on the stack is faster than on the heap. This is due to that each allocation on the heap requires searching for a block which is big enough to fit the data in or even splitting the data over multiple blocks while guaranteeing thread-safety.&lt;/p&gt;
+&lt;p&gt;When profiling for memory allocations I found that Resharper dotTrace works for me best. Here is why:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Clear overview of total memory usage within the profile snapshot.&lt;/li&gt;
+&lt;li&gt;Allows filtering by memory type.&lt;/li&gt;
+&lt;li&gt;Allows filtering of memory allocations within a selected timeline.&lt;/li&gt;
+&lt;li&gt;Allows filtering of memory allocations per thread.&lt;/li&gt;
+&lt;li&gt;Visually shows Garbage Collector run time.&lt;/li&gt;
+&lt;li&gt;Visually shows UI freezes due to excessive memory traffic and Garbage Collections, blocking the main thread.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;&lt;img src="https://resources.jetbrains.com/help/img/dotnet/2020.2/memory_allocation_type.png" alt="memory allocation type"&gt;&lt;/p&gt;
+&lt;br /&gt;
+&lt;h4 id="microarchitecture"&gt;Microarchitecture&lt;/h4&gt;
+&lt;p&gt;The CPU contains allot of optimizations to maximize the performance. Examples of these feature are caching and branch prediction. Even when the CPU facilitates optimizations, they can also work against you, so being aware of how the CPU works is essential when writing good code. I recommend watching this video; &lt;a href="https://www.infoq.com/presentations/microarchitecture-modern-cpu/"&gt;Understanding CPU Microarchitecture to Increase Performance&lt;/a&gt;, where Alex Blewitt talks about: the CPU layout, caching, the memory layout, execution units and scheduling.&lt;/p&gt;
+&lt;p&gt;While on average branch prediction is about 95% of the times right, it can become expensive. Writing branch-free code would eliminate branches predication completely but this is not achievable for all software. Daniel Lemire wrote an excellent article about removing branches: &lt;a href="https://www.infoq.com/articles/making-code-faster-taming-branches/"&gt;Making Your Code Faster by Taming Branches&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Intel VTune Profiler offers great insight in the Microarchitecture bottlenecks of your system processes or a single application. It gives insight in:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Code that causes memory stalls because of inefficient reads or writes (hot memory access)&lt;/li&gt;
+&lt;li&gt;Code which is delayed because of longer memory read/write latency due to the memory being stored in an older memory cache generation (L1, L2, L3 or in RAM).&lt;/li&gt;
+&lt;li&gt;Branch mispredictions&lt;/li&gt;
+&lt;li&gt;Availability of Pipeline execution slots&lt;/li&gt;
+&lt;/ol&gt;
+&lt;h4 id="threading-efficiency"&gt;Threading Efficiency&lt;/h4&gt;
+&lt;p&gt;Each process has its own resources in order to execute a program such as; virtual address space, executable code, open handles to system objects, a security context, a unique process identifier, environment variables, a priority class, minimum and maximum working set sizes, and at least one thread of execution. The first thread is often called &lt;em&gt;primary thread&lt;/em&gt; or &lt;em&gt;main thread&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;A thread, linked to a process, can be scheduled for execution. Each thread shares the virtual address space and system resources of a process. In addition, each thread maintains exception handlers, a scheduling priority, thread local storage, a unique thread identifier, and a set of structures the system will use to save the thread context until it is scheduled. The thread context includes the thread&amp;rsquo;s set of machine registers, the kernel stack, a thread environment block, and a user stack in the address space of the thread&amp;rsquo;s process. Threads can also have their own security context, which can be used for impersonating clients.&lt;/p&gt;
+&lt;p&gt;Multiprocessors computers can execute in parallel as many threads as there are processors. A part of the kernel called the &lt;em&gt;scheduler&lt;/em&gt; manages the threads when they are executed as well as the amount of time they have to execute (timeslice or quantum). The scheduler is basically a load balancer to keep all computer resources busy. When the scheduler switches between threads there is overhead due to booking, this is called &lt;em&gt;context switching&lt;/em&gt;. Ideally you would want to limit the amount of threads to the amount of CPU cores in your program to maximize performance by reducing context switching. This sounds like a perfect solution, but there will always be context switches due to other running processes on the operating system. It is hard to put a number on what the costs are of context switching. In general, the cost of context switch ranges from several microseconds to more than one thousand microseconds depending on CPU architecture and program cache sizes.&lt;/p&gt;
+&lt;p&gt;All threads can access and modify data on the heap. If multiple threads access the same resource and at least one of them will be writing, you need to protect the critical section. To achieve thread-safeness you can:&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Confinement: don’t share data between threads.&lt;/li&gt;
+&lt;li&gt;Immutability: make the shared data immutable.&lt;/li&gt;
+&lt;li&gt;Use existing thread safe data types: use a data type that does the coordination for you.&lt;/li&gt;
+&lt;li&gt;Synchronization; prevent threads from accessing the shared data at the same time.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Looking back at &lt;a href="#memory-allocation"&gt;Memory Allocation&lt;/a&gt;, we know that the .NET Garbage Collector(GC) automatically searches for resources which can be released. Now, take threading into the equation with the GC; Heap resources are shared by all threads and shared resources need protected when accessing them. Say if many objects with a small lifetime are being allocated, the GC will need more time to release those resources, resulting in all other threads being blocked by the GC. Eventually, stressing the GC can result in a snowball effect that can be experienced by UI Freezes, where the operating system temporary seems to be unresponsive.&lt;/p&gt;
+&lt;p&gt;Threading efficiency boils down to the amount of time threads must wait for synchronization due to the amount of executions by a thread inside a critical section of a shared resource, resulting in bad CPU utilization. Parallel performance suffers when waits occur while cores are under-utilized.&lt;/p&gt;
+&lt;p&gt;For me Intel VTune Profiler&amp;rsquo;s Threading Analysis helped to analyze thread wait time and find synchronization bottlenecks best, while Resharper DotTrace had a better overview of the allocated memory, UI Freezes combined with the time in GC.&lt;/p&gt;
+&lt;p&gt;Even though there is no straightforward answer to every problem, problems tend to have things in common. In my next performance post, we will visit some of these common issues including examples and solutions.&lt;/p&gt;
+&lt;p&gt;I hope you enjoyed this long read, until next time!&lt;br&gt;
+Thomas&lt;/p&gt;
+&lt;br /&gt;
+&lt;h4 id="resoures"&gt;Resoures&lt;/h4&gt;
+&lt;p&gt;Even more details can be found in the following pages.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="https://www.infoq.com/presentations/microarchitecture-modern-cpu/"&gt;Understanding CPU Microarchitecture to Increase Performance - Alex Blewitt&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://www.infoq.com/articles/making-code-faster-taming-branches/"&gt;Making Your Code Faster by Taming Branches - Daniel Lemire&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://gist.github.com/jboner/2841832"&gt;Latency Comparison Numbers (~2012) - Jonas Bonér&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://docs.microsoft.com/en-gb/windows/win32/procthread/about-processes-and-threads"&gt;About Processes and Threads - Microsoft&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://www.usenix.org/legacy/events/expcs07/papers/2-li.pdf"&gt;Quantifying The Cost of Context Switch - Chuanpeng Li, Chen Ding, Kai Shen&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="https://web.mit.edu/6.005/www/fa15/classes/23-locks/"&gt;Reading 23: Locks and Synchronization - MIT&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;</description></item></channel></rss>
