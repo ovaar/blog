@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Conan on Ovaar - Software engineering blog</title><link>/categories/conan/</link><description>Recent content in Conan on Ovaar - Software engineering blog</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>2020 Ovaar. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Fri, 12 Sep 2025 00:00:00 +0000</lastBuildDate><atom:link href="/categories/conan/index.xml" rel="self" type="application/rss+xml"/><item><title>Conan 2.x migration and the lessons learned</title><link>/blog/conan-2x-migration-lessons-learned/</link><pubDate>Fri, 12 Sep 2025 00:00:00 +0000</pubDate><guid>/blog/conan-2x-migration-lessons-learned/</guid><description>&lt;ul&gt;
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Conan on Ovaar - Software engineering blog</title><link>https://ovaar.github.io/categories/conan/</link><description>Recent content in Conan on Ovaar - Software engineering blog</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>2020 Ovaar. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Fri, 12 Sep 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://ovaar.github.io/categories/conan/index.xml" rel="self" type="application/rss+xml"/><item><title>Conan 2.x migration and the lessons learned</title><link>https://ovaar.github.io/blog/conan-2x-migration-lessons-learned/</link><pubDate>Fri, 12 Sep 2025 00:00:00 +0000</pubDate><guid>https://ovaar.github.io/blog/conan-2x-migration-lessons-learned/</guid><description>&lt;ul&gt;
 &lt;li&gt;&lt;a href="#1-conan-2x-migration-and-the-lessons-learned"&gt;1. Conan 2.x migration and the lessons learned&lt;/a&gt;
 &lt;ul&gt;
 &lt;li&gt;&lt;a href="#11-the-path-to-conan-2"&gt;1.1. The path to Conan 2&lt;/a&gt;&lt;/li&gt;
@@ -37,7 +37,7 @@
 &lt;p&gt;&lt;a href="https://www.bimcollab.com/en/"&gt;BIMcollab&lt;/a&gt; builds high‑performance, model-based collaboration software that helps project teams improve BIM model quality. One of those products, BIMcollab Zoom, is an IFC model viewer focused on fast navigation, model checking (e.g. clash detection), and issue tracking. The product has matured over roughly nine years (I’ve been fortunate to contribute during the last five), during which its architecture naturally evolved as capabilities, people, and expectations grew.&lt;/p&gt;
 &lt;p&gt;As with most long‑lived products, incremental ideas, framework shifts, and delivery pressure led to uneven investment in foundational refactoring. That healthy tension between delivering features and reshaping internals taught us a lot: we saw longer feedback cycles, more regression risk than we liked, and higher cognitive load in some areas of the codebase. Those signals clarified where to focus: testability, dependency hygiene, and repeatable environment setup.&lt;/p&gt;
 &lt;p&gt;A resilient architecture became the enabler. For BIMcollab Zoom that foundation starts with &lt;a href="https://conan.io/"&gt;Conan&lt;/a&gt;, our backbone for sharing native components and 3rd‑party libraries across products. When I joined, Conan was already present, but most external dependencies were still compiled outside and only wrapped afterward (Visual Studio and Xcode project files), making timely security updates and experimentation slower than we wanted.&lt;/p&gt;
-&lt;p&gt;The .NET Framework 4.8.1 upgrade across Windows projects created a natural “pause point” to reduce technical drag. We used it to standardize and automate more of the native dependency workflow—aiming for less manual orchestration, faster updates (e.g. OpenSSL), and predictable cross‑platform output. The first iteration replaced custom recipes with upstream Conan Center Index (CCI) ones: we cloned them into a local repo and drove source builds via a Python script encoding per‑package, per‑platform configuration. That script alone cut the effort to manage Conan libraries by roughly an order of magnitude. Developers still supervised platform builds manually—and occasionally rebooted between OSes—so it wasn’t the end state, but it materially improved reproducibility. It also unlocked building macOS Universal (FAT) binaries more easily (see &lt;a href="/blog/how-to-build-macos-universal-binaries-with-conan-and-cmake/"&gt;How to build Macos Universal Binaries with Conan and CMake&lt;/a&gt;). Adopting CCI upstream recipes further reduced cognitive load through cleaner, isolated settings and option models.&lt;/p&gt;
+&lt;p&gt;The .NET Framework 4.8.1 upgrade across Windows projects created a natural “pause point” to reduce technical drag. We used it to standardize and automate more of the native dependency workflow—aiming for less manual orchestration, faster updates (e.g. OpenSSL), and predictable cross‑platform output. The first iteration replaced custom recipes with upstream Conan Center Index (CCI) ones: we cloned them into a local repo and drove source builds via a Python script encoding per‑package, per‑platform configuration. That script alone cut the effort to manage Conan libraries by roughly an order of magnitude. Developers still supervised platform builds manually—and occasionally rebooted between OSes—so it wasn’t the end state, but it materially improved reproducibility. It also unlocked building macOS Universal (FAT) binaries more easily (see &lt;a href="https://ovaar.github.io/blog/how-to-build-macos-universal-binaries-with-conan-and-cmake/"&gt;How to build Macos Universal Binaries with Conan and CMake&lt;/a&gt;). Adopting CCI upstream recipes further reduced cognitive load through cleaner, isolated settings and option models.&lt;/p&gt;
 &lt;p&gt;A later strategic move—migrating CI/CD from Jenkins to Azure DevOps—arrived just as Conan 1.x entered deprecation. Because Conan sits at the heart of the development workflow, we treated the platform migration and the Conan 2 transition as a single, well‑scoped modernization effort. Normally combining initiatives increases risk; here it consolidated context switching, aligned stakeholders, and accelerated convergence on a more maintainable pipeline.&lt;/p&gt;
 &lt;p&gt;Before we dive into the technical details I want to thank the Conan team for doing a great job!&lt;/p&gt;
 &lt;h2 id="12-the-conan-2x-migration"&gt;1.2. The Conan 2.x migration&lt;/h2&gt;
@@ -60,8 +60,8 @@
 &lt;/code&gt;&lt;/pre&gt;&lt;div class="center"&gt;
 &lt;figure&gt;
 &lt;img sizes="(min-width: 35em) 720px, 100vw"
-srcset='/img/conan2x-list-revisions_hu_2cc980724076bb40.png 500w'
-src="/img/conan2x-list-revisions.png"
+srcset='https://ovaar.github.io/img/conan2x-list-revisions_hu_2cc980724076bb40.png 500w'
+src="https://ovaar.github.io/img/conan2x-list-revisions.png"
 alt="Screenshot showing Conan 2.x list revisions output"&gt;
 &lt;figcaption&gt;Screenshot showing Conan 2.x list revisions output&lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/div&gt;
@@ -75,8 +75,8 @@ zstd/1.5.7#f98394e178ac97e2a7b445ea0ce6bcaf
 &lt;div class="center"&gt;
 &lt;figure&gt;
 &lt;img sizes="(min-width: 35em) 720px, 100vw"
-srcset='/img/conan_package_id_full_hu_7145fbabd3cf5595.png 500w, /img/conan_package_id_full_hu_3577ae00c38b82d.png 800w'
-src="/img/conan_package_id_full.png"
+srcset='https://ovaar.github.io/img/conan_package_id_full_hu_7145fbabd3cf5595.png 500w, https://ovaar.github.io/img/conan_package_id_full_hu_3577ae00c38b82d.png 800w'
+src="https://ovaar.github.io/img/conan_package_id_full.png"
 alt="Screenshot showing Conan 2.x list output with package ids"&gt;
 &lt;figcaption&gt;Screenshot showing Conan 2.x list output with package ids&lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/div&gt;
@@ -271,7 +271,7 @@ These build systems are supported through the concept &amp;ldquo;Generators&amp;
 &lt;ol&gt;
 &lt;li&gt;Building the package twice for &lt;code&gt;x86_64&lt;/code&gt; and &lt;code&gt;armv8&lt;/code&gt; separately;
 &lt;ul&gt;
-&lt;li&gt;To either combine them later using lipo, see &lt;a href="/blog/how-to-build-macos-universal-binaries-with-conan-and-cmake/"&gt;How to build Macos Universal Binaries with Conan and CMake&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;To either combine them later using lipo, see &lt;a href="https://ovaar.github.io/blog/how-to-build-macos-universal-binaries-with-conan-and-cmake/"&gt;How to build Macos Universal Binaries with Conan and CMake&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;Or publish it twice for both platforms as FAT binaries, which we chose to do up until the point where the project is migrated to CMake.&lt;/li&gt;
 &lt;/ul&gt;
 &lt;/li&gt;

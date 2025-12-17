@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Vuejs on Ovaar - Software engineering blog</title><link>/tags/vuejs/</link><description>Recent content in Vuejs on Ovaar - Software engineering blog</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>2020 Ovaar. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Tue, 22 Feb 2022 00:00:00 +0000</lastBuildDate><atom:link href="/tags/vuejs/index.xml" rel="self" type="application/rss+xml"/><item><title>How a smart mirror project finished after years of work</title><link>/blog/how-a-smart-mirror-project-finished-after-years/</link><pubDate>Tue, 22 Feb 2022 00:00:00 +0000</pubDate><guid>/blog/how-a-smart-mirror-project-finished-after-years/</guid><description>&lt;h2 id="introduction"&gt;Introduction&lt;/h2&gt;
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Vuejs on Ovaar - Software engineering blog</title><link>https://ovaar.github.io/tags/vuejs/</link><description>Recent content in Vuejs on Ovaar - Software engineering blog</description><generator>Hugo -- gohugo.io</generator><language>en</language><copyright>2020 Ovaar. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License.</copyright><lastBuildDate>Tue, 22 Feb 2022 00:00:00 +0000</lastBuildDate><atom:link href="https://ovaar.github.io/tags/vuejs/index.xml" rel="self" type="application/rss+xml"/><item><title>How a smart mirror project finished after years of work</title><link>https://ovaar.github.io/blog/how-a-smart-mirror-project-finished-after-years/</link><pubDate>Tue, 22 Feb 2022 00:00:00 +0000</pubDate><guid>https://ovaar.github.io/blog/how-a-smart-mirror-project-finished-after-years/</guid><description>&lt;h2 id="introduction"&gt;Introduction&lt;/h2&gt;
 &lt;p&gt;Early 2019 I noticed the &lt;a href="https://magicmirror.builders/"&gt;Magic Mirror&lt;/a&gt; project. To me the way of how woodworking and technology come together really got me. I just had to build one from scratch, ofcourse. It was a great opportunity for me to build something physical and learn a few things about some fancy new JavaScript frontend framework. I decided to call it the &lt;a href="https://github.com/ovaar/mirrorm8"&gt;mirrorm8&lt;/a&gt; project. I never wrote about it until now.&lt;/p&gt;
 &lt;p&gt;Like with many ideas, our inspiration and creativity give birth to others. But as we slowly come back to earth, we realize that with the little time we have there is only so little we can do. Display the weather forecast, upcoming agenda items, voice control, gesture control, facial recognition in order to dynamically switch content per user, real-time traffic- and crypto and stocks &amp;hellip;&lt;/p&gt;
 &lt;h2 id="research-fase"&gt;Research fase&lt;/h2&gt;
@@ -24,48 +24,48 @@ Using &lt;a href="https://dietpi.com/"&gt;DietPi&lt;/a&gt; as the Linux image al
 &lt;p&gt;&lt;div class="center"&gt;
 &lt;figure&gt;
 &lt;img sizes="(min-width: 35em) 720px, 100vw"
-srcset='/img/IMG_20190609_171025_hu_218a37adf606613e.jpg 500w, /img/IMG_20190609_171025_hu_d23d15fff5b4cfd7.jpg 800w, /img/IMG_20190609_171025_hu_a76ae9e96f3ce5e4.jpg 1200w'
-src="/img/IMG_20190609_171025.jpg"
+srcset='https://ovaar.github.io/img/IMG_20190609_171025_hu_218a37adf606613e.jpg 500w, https://ovaar.github.io/img/IMG_20190609_171025_hu_d23d15fff5b4cfd7.jpg 800w, https://ovaar.github.io/img/IMG_20190609_171025_hu_a76ae9e96f3ce5e4.jpg 1200w'
+src="https://ovaar.github.io/img/IMG_20190609_171025.jpg"
 alt="Mirrorm8 - Wooden frame pieces"&gt;
 &lt;figcaption&gt;Mirrorm8 - Wooden frame pieces&lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/div&gt;
 &lt;div class="center"&gt;
 &lt;figure&gt;
 &lt;img sizes="(min-width: 35em) 720px, 100vw"
-srcset='/img/IMG_20190610_113928_hu_cdac4afe398f4839.jpg 500w, /img/IMG_20190610_113928_hu_255cc2ba86052b79.jpg 800w, /img/IMG_20190610_113928_hu_efe4eec747d334a2.jpg 1200w'
-src="/img/IMG_20190610_113928.jpg"
+srcset='https://ovaar.github.io/img/IMG_20190610_113928_hu_cdac4afe398f4839.jpg 500w, https://ovaar.github.io/img/IMG_20190610_113928_hu_255cc2ba86052b79.jpg 800w, https://ovaar.github.io/img/IMG_20190610_113928_hu_efe4eec747d334a2.jpg 1200w'
+src="https://ovaar.github.io/img/IMG_20190610_113928.jpg"
 alt="Mirrorm8 - Wooden frame assembled front"&gt;
 &lt;figcaption&gt;Mirrorm8 - Wooden frame assembled front&lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/div&gt;
 &lt;div class="center"&gt;
 &lt;figure&gt;
 &lt;img sizes="(min-width: 35em) 720px, 100vw"
-srcset='/img/IMG_20200423_225011_hu_4c0c1d297e2ecfdb.jpg 500w, /img/IMG_20200423_225011_hu_feb673a6b90e6f62.jpg 800w, /img/IMG_20200423_225011_hu_48d6d0df187cf374.jpg 1200w'
-src="/img/IMG_20200423_225011.jpg"
+srcset='https://ovaar.github.io/img/IMG_20200423_225011_hu_4c0c1d297e2ecfdb.jpg 500w, https://ovaar.github.io/img/IMG_20200423_225011_hu_feb673a6b90e6f62.jpg 800w, https://ovaar.github.io/img/IMG_20200423_225011_hu_48d6d0df187cf374.jpg 1200w'
+src="https://ovaar.github.io/img/IMG_20200423_225011.jpg"
 alt="Mirrorm8 - Wooden frame assembled back"&gt;
 &lt;figcaption&gt;Mirrorm8 - Wooden frame assembled back&lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/div&gt;
 &lt;div class="center"&gt;
 &lt;figure&gt;
 &lt;img sizes="(min-width: 35em) 720px, 100vw"
-srcset='/img/IMG-20200423-WA0021_hu_4c892a417c05f68c.jpg 500w, /img/IMG-20200423-WA0021_hu_d05ba0d9c7080326.jpg 800w, /img/IMG-20200423-WA0021_hu_f7aae67068387b38.jpg 1200w'
-src="/img/IMG-20200423-WA0021.jpg"
+srcset='https://ovaar.github.io/img/IMG-20200423-WA0021_hu_4c892a417c05f68c.jpg 500w, https://ovaar.github.io/img/IMG-20200423-WA0021_hu_d05ba0d9c7080326.jpg 800w, https://ovaar.github.io/img/IMG-20200423-WA0021_hu_f7aae67068387b38.jpg 1200w'
+src="https://ovaar.github.io/img/IMG-20200423-WA0021.jpg"
 alt="Mirrorm8 - Spy film glas"&gt;
 &lt;figcaption&gt;Mirrorm8 - Spy film glas&lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/div&gt;
 &lt;div class="center"&gt;
 &lt;figure&gt;
 &lt;img sizes="(min-width: 35em) 720px, 100vw"
-srcset='/img/IMG_20200720_190254_hu_4e06de0b25cc831b.jpg 500w, /img/IMG_20200720_190254_hu_9b0d160ac56b61ab.jpg 800w, /img/IMG_20200720_190254_hu_d7258e0679141391.jpg 1200w'
-src="/img/IMG_20200720_190254.jpg"
+srcset='https://ovaar.github.io/img/IMG_20200720_190254_hu_4e06de0b25cc831b.jpg 500w, https://ovaar.github.io/img/IMG_20200720_190254_hu_9b0d160ac56b61ab.jpg 800w, https://ovaar.github.io/img/IMG_20200720_190254_hu_d7258e0679141391.jpg 1200w'
+src="https://ovaar.github.io/img/IMG_20200720_190254.jpg"
 alt="Mirrorm8 - Chromium restore pages"&gt;
 &lt;figcaption&gt;Mirrorm8 - Chromium restore pages&lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/div&gt;
 &lt;div class="center"&gt;
 &lt;figure&gt;
 &lt;img sizes="(min-width: 35em) 720px, 100vw"
-srcset='/img/IMG_20211228_141034_hu_edbf4bf0dddeef18.jpg 500w, /img/IMG_20211228_141034_hu_4035afe86f6b0ee6.jpg 800w, /img/IMG_20211228_141034_hu_12ab99a1aedb5bb.jpg 1200w'
-src="/img/IMG_20211228_141034.jpg"
+srcset='https://ovaar.github.io/img/IMG_20211228_141034_hu_edbf4bf0dddeef18.jpg 500w, https://ovaar.github.io/img/IMG_20211228_141034_hu_4035afe86f6b0ee6.jpg 800w, https://ovaar.github.io/img/IMG_20211228_141034_hu_12ab99a1aedb5bb.jpg 1200w'
+src="https://ovaar.github.io/img/IMG_20211228_141034.jpg"
 alt="Mirrorm8 - Fully assembled "&gt;
 &lt;figcaption&gt;Mirrorm8 - Fully assembled &lt;/figcaption&gt;&lt;/figure&gt;
 &lt;/div&gt;&lt;/p&gt;
