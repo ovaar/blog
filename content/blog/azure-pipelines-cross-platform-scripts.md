@@ -1,6 +1,6 @@
 +++
 date = "2024-08-01"
-title = "Azure pipelines cross-platform scripts" Updating site Wed, Dec 17, 2025
+title = "Azure pipelines cross-platform scripts"
 type = "post"
 categories = ["Devops"]
 tags = ["devops", "azure"]
