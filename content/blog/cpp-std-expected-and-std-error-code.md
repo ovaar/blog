@@ -1,13 +1,12 @@
 +++
 date = "2025-12-17"
-title = "C++ std::expected and std::error_code lessons learned"
+title = "Why std::expected matters for error handling"
 type = "post"
 categories = ["Development"]
 tags = ["cpp"]
 +++
 
 # Why std::expected matters for error handling
-
 
 C++23 introduced [std::expected](https://en.cppreference.com/w/cpp/utility/expected.html), changing how we handle errors without exceptions. When you combine it with [std::error_code](https://en.cppreference.com/w/cpp/error/error_code.html) (available since C++11), you get an error handling approach that forces explicit error checks while keeping your code readable.
 
