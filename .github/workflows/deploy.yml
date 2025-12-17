@@ -48,6 +48,8 @@ jobs:
               --baseURL "${{ steps.pages.outputs.base_url }}/"
 
           cd public
+          # Configure submodule remote to use the PAT token
+          git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/ovaar/ovaar.github.io.git
           git add .
           git commit -m "Deploy site $(date)" || echo "No changes to commit"
           git push origin master
