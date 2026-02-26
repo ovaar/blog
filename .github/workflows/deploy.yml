@@ -19,6 +19,13 @@ jobs:
           token: ${{ secrets.GH_PAT }}
           persist-credentials: true
 
+      - name: Configure git credentials for submodule
+        run: |
+          git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+          cd public
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
       - name: Debug
         run: |
           echo "Runner user ID: $(id -u)"
@@ -48,8 +55,6 @@ jobs:
               --baseURL "${{ steps.pages.outputs.base_url }}/"
 
           cd public
-          # Configure submodule remote to use the PAT token
-          git remote set-url origin https://x-access-token:${{ secrets.GH_PAT }}@github.com/ovaar/ovaar.github.io.git
           git add .
           git commit -m "Deploy site $(date)" || echo "No changes to commit"
           git push origin master
