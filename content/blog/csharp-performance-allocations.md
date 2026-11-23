@@ -42,9 +42,9 @@ Most of the PRs fall into a handful of patterns. None of them are new. That is t
 
 ### 1. Do not build a string just to write bytes
 
-Kestrel wrote the `Content-Length` header by turning a number into a `string` and then encoding that string into the response buffer. [#70136](https://github.com/dotnet/aspnetcore/pull/70136) formats the number straight into the buffer with `ulong.TryFormat`. Since .NET 8, numbers can format directly to UTF-8 bytes, so the intermediate string is not needed at all.
+For HTTP/2 and HTTP/3, Kestrel writes the `Content-Length` header by turning the number into a `string` and then encoding that string into the response buffer. The runtime only caches the strings for numbers below 300, so most responses allocate a string just to copy its digits. [#70117](https://github.com/dotnet/aspnetcore/pull/70117) (still open) writes the digits straight into the output instead. For HTTP/1.1, which did not allocate but formatted large values with a hand-written digit loop, [#70136](https://github.com/dotnet/aspnetcore/pull/70136) (merged) switched to `ulong.TryFormat` and cut the time by 43–47% for values of 1,000 and up. Since .NET 8, numbers can format directly to UTF-8 bytes, so the intermediate string is not needed at all.
 
-Here is a minimal version of both approaches:
+Here is a minimal version of the pattern, not Kestrel's actual code:
 
 ```csharp
 // Before: allocates a string, then encodes it
@@ -61,11 +61,11 @@ BenchmarkDotNet with `[MemoryDiagnoser]`, .NET 10.0.11 on an Apple M5:
 | Via string | 6.41 ns | 40 B |
 | `TryFormat` | 2.12 ns | 0 B |
 
-Four nanoseconds and 40 bytes is nothing on its own. It matters because Kestrel does this on every response.
+Four nanoseconds and 40 bytes is nothing on its own. It matters for code that runs on every response.
 
 ### 2. Keep LINQ out of hot paths
 
-LINQ allocates: a delegate here, an enumerator there, a `HashSet` for `Distinct`. In code that runs once, that does not matter. In code that runs per request, it adds up. [#70223](https://github.com/dotnet/aspnetcore/pull/70223) rewrote Identity's `PasswordValidator` without LINQ and went from about 240 ns and 832 B to about 17 ns and 72 B per valid password.
+LINQ allocates: a delegate here, an enumerator there, a `HashSet` for `Distinct`. In code that runs once, that does not matter. In code that runs per request, it adds up. [#70223](https://github.com/dotnet/aspnetcore/pull/70223) rewrote Identity's `PasswordValidator` without LINQ and measured about 240 ns and 832 B before and about 17 ns and 72 B after, per valid password. It was closed without being merged and without a recorded reason. My guess: a password check runs once per login, not once per request, so the win does not add up to much.
 
 A password check in the same spirit:
 
@@ -119,13 +119,13 @@ Several PRs did not invent anything. They switched to an overload that works on 
 
 This is the part I find most useful, because my 2020 draft had none of it.
 
-**Wins have trade-offs.** [#70226](https://github.com/dotnet/aspnetcore/pull/70226) made TOTP validation 21–35% faster, but for authenticator apps it went from 0 B to about 296 B per validation, in exchange for about 2 µs less CPU. Whether that is a win depends on what you are short of.
+**Wins have trade-offs.** [#70226](https://github.com/dotnet/aspnetcore/pull/70226) would have made TOTP validation 21–35% faster, but for authenticator apps it went from 0 B to about 296 B per validation, in exchange for about 2 µs less CPU. It was put on hold and closed: it conflicted with another PR, and the gain was on a cold path. Whether a trade-off is a win depends on what you are short of and how often the code runs.
 
 **A win on one input can be a loss on another.** A multipart change ([#70164](https://github.com/dotnet/aspnetcore/pull/70164)) made 1-byte fields much faster (1,531 to 1,220 ns, 10,296 to 6,840 B) and 100 KB fields about 4.5% slower. It was closed as "a little complex".
 
-**Measure against the previous version too.** After review changes, [#70200](https://github.com/dotnet/aspnetcore/pull/70200) was still faster than main but slower than its own previous head in one case. Comparing only against main would have hidden that.
+**Measure against the previous version too.** After review changes, [#70200](https://github.com/dotnet/aspnetcore/pull/70200) (still open) was still faster than main but slower than its own previous head in one case. Comparing only against main would have hidden that.
 
-**Most PRs were not merged as-is.** By Fowler's status update of 23 November 2026, 99 `perf/*` PRs had been opened: 40 merged, 34 still open and 25 closed without merging. Some of those were closed because the gain was too small for the extra code. A benchmark tells you a change is faster. It does not tell you the change is worth maintaining.
+**Most PRs were not merged as-is.** By Fowler's status update of 23 November 2026, 99 `perf/*` PRs had been opened: 40 merged, 34 still open and 25 closed without merging. Some were closed as too complex or too small a gain for the extra code, such as #70164 above. For others no reason was recorded. A benchmark tells you a change is faster. It does not tell you the change is worth maintaining.
 
 **Microbenchmarks are not end-to-end throughput.** One commenter pointed out that many teams care less about requests per second and more about how many containers fit on a node, which depends on how quickly memory is given back to the OS. Fowler's answer was that this kind of "peanut butter" work has always been worth it when the code does not get much more complex, and that the team checks end-to-end results with larger benchmarks. Both are true. Know which of the two you are optimizing for before you start.
 
@@ -142,7 +142,7 @@ Here is the list from the original draft, and what I would write today:
 | Use pre-allocated fixed-size arrays | Use `Span<T>` over pooled arrays, and `stackalloc` for small, bounded buffers. |
 | Do not use `IEnumerable<T>` in hot paths | Still true, and it includes LINQ. See the `PasswordValidator` example above. |
 | Use `StringBuilder` to concatenate strings | Better: do not create the string at all. Write to a span with `TryFormat`, or use `string.Create` when you do need a string. |
-| Value types vs reference types | Structs avoid heap allocations until they are boxed. Watch for boxing through interfaces and `object` parameters. |
+| Value types vs reference types | Structs used as locals or parameters avoid heap allocations, until they are boxed. Watch for boxing through interfaces and `object` parameters. |
 | Use `SocketAsyncEventArgs` for TCP servers | Use Kestrel, or `System.IO.Pipelines` on top of sockets. Both do the buffer management for you. |
 | Mark small methods `AggressiveInlining` | Mostly unnecessary now. Tiered compilation and dynamic PGO (on by default since .NET 8) inline hot methods on their own. Measure before you add the attribute. |
 

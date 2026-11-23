@@ -44,9 +44,9 @@ Many cross-platform headers contain a guard like this, so they compile without `
 #endif
 ```
 
-On Linux and macOS that is correct: there is only one calling convention, and `APIENTRY` should be empty. On 32-bit Windows it is only correct if `<windows.h>` was included first. If a header with this guard comes first, `APIENTRY` is defined as nothing. `<windows.h>` does not overwrite it, and every function pointer type declared after that point is `__cdecl`, while the driver code behind those pointers is still `__stdcall`.
+On Linux and macOS that is correct: there is only one calling convention, and `APIENTRY` should be empty. On 32-bit Windows it is only correct if `<windows.h>` was included first. If a header with this guard comes first, `APIENTRY` is defined as nothing, and every function pointer type that header declares is `__cdecl`, while the driver code behind those pointers is still `__stdcall`. When `<windows.h>` is included later, it redefines `APIENTRY` as `WINAPI`, but that only affects declarations after it. The types that were already declared stay wrong.
 
-Nothing warns you. The types are valid, the program links, and the calls even appear to work.
+The compiler does notice the redefinition: MSVC reports warning C4005 ("'APIENTRY': macro redefinition") and clang reports `-Wmacro-redefined`. In a project that already has a few hundred warnings, or that turns C4005 off because `<windows.h>` and other headers trigger it all the time, nobody reads it. Nothing fails to compile, the program links, and the calls even appear to work.
 
 ## The bug in four instructions
 
@@ -88,7 +88,7 @@ ret
 
 ## Why the 64-bit build was fine
 
-x64 Windows has a single calling convention. The compiler accepts `__stdcall` and `__cdecl` there and ignores them. The same source compiled for x64 passes the arguments in registers and makes no stack adjustment at all, so a wrong or missing `APIENTRY` has no effect. If you only test 64-bit builds, you will never see this bug.
+x64 Windows has a single calling convention. The compiler accepts `__stdcall` and `__cdecl` there and ignores them. The same source compiled for x64 passes the first four arguments in registers and never cleans up arguments after a call, so a wrong or missing `APIENTRY` has no effect. If you only test 64-bit builds, you will never see this bug.
 
 ## Finding it
 
@@ -120,7 +120,7 @@ Make sure the platform header defines `APIENTRY` before any header that has an e
 // other OpenGL headers after this
 ```
 
-A rule about include order only lasts until someone sorts the includes. A check in the build lasts longer. Add this to a header that is included after the OpenGL headers, so a 32-bit Windows build fails at compile time instead of at runtime:
+A rule about include order only lasts until someone sorts the includes. A check in the build lasts longer. Add this (C++17) to a header that is included after the OpenGL headers, so a 32-bit Windows build fails at compile time instead of at runtime:
 
 ```cpp
 #if defined(_WIN32) && !defined(_WIN64)
@@ -134,7 +134,8 @@ Function pointer types with different calling conventions are different types on
 
 ## Takeaways
 
-- A function pointer's type is a promise about the code behind it. If the calling convention in the type is wrong, nothing checks it at compile time, and the result is stack corruption.
+- A function pointer's type is a promise about the code behind it. If the calling convention in the type is wrong, nothing checks it by default, and the result is stack corruption.
+- Read macro redefinition warnings (C4005, `-Wmacro-redefined`). For this bug it is the only warning you get.
 - `#ifndef X / #define X` fallbacks make include order part of a header's meaning. That is fine on platforms where the fallback is right, and dangerous on the one where it is not.
 - Build and test the 32-bit target if you ship it. x64 is not a stricter version of x86: some bugs only exist on x86.
 - Keep `/RTC1` in Debug builds. It turned a random crash into a one-line diagnosis.
