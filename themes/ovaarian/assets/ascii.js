@@ -399,6 +399,134 @@
     }
   };
 
+  // A small configurable product as named parts (base, column, arm), each an axis-aligned box
+  // [x, y, z, half-x, half-y, half-z, dbId]. Shared by the SVF-to-glTF scenes below.
+  var PRODUCT = [
+    [0, 0.42, 0, 0.9, 0.16, 0.55, 1042],
+    [-0.45, -0.18, 0, 0.16, 0.45, 0.16, 1043],
+    [0.08, -0.6, 0, 0.6, 0.1, 0.12, 1044]
+  ];
+
+  // Projects the 8 corners of a box and draws its 12 edges. Returns the projected centre.
+  function wireBox(g, b, ax, ay, ox, sc, a, dash) {
+    var V = [];
+    for (var i = 0; i < 8; i++) {
+      var p = rotate([b[0] + ((i & 1) ? b[3] : -b[3]), b[1] + ((i & 2) ? b[4] : -b[4]), b[2] + ((i & 4) ? b[5] : -b[5])], ax, ay);
+      var f = 3 / (p[2] + 4) * sc;
+      V.push([g.col(ox + p[0] * f), g.row(p[1] * f)]);
+    }
+    var E = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];
+    for (var e = 0; e < E.length; e++) g.line(V[E[e][0]][0], V[E[e][0]][1], V[E[e][1]][0], V[E[e][1]][1], a, null, dash);
+    for (var q = 0; q < 8; q++) g.put(V[q][0], V[q][1], '+', Math.min(1, a + 0.2), true);
+    var cp = rotate([b[0], b[1], b[2]], ax, ay), cf = 3 / (cp[2] + 4) * sc;
+    return [g.col(ox + cp[0] * cf), g.row(cp[1] * cf)];
+  }
+
+  // SVF to glTF: the same model rendered twice, side by side. Same parts, same tree, same shape.
+  SCENES.twin = {
+    draw: function (g, t) {
+      // Sway rather than spin: edge-on views turn a wireframe into noise.
+      var ax = 0.22, ay = 0.55 + Math.sin(t * 0.25) * 0.35;
+      var sc = Math.min(0.62, g.w * 0.42);
+      var half = g.w / 2;
+      for (var r = 1; r < g.rows - 1; r += 2) g.put(g.cols / 2, r, '┊', 0.3);
+      var sides = [['svf', -half], ['gltf', half]];
+      for (var s = 0; s < 2; s++) {
+        for (var k = 0; k < PRODUCT.length; k++) wireBox(g, PRODUCT[k], ax, ay, sides[s][1], sc, 0.45 + k * 0.2, null);
+        var lc = Math.round(g.col(sides[s][1]) - sides[s][0].length / 2);
+        g.text(lc, 1, sides[s][0], 0.9);
+      }
+      var note = g.cols > 40 ? 'nodes 3 = 3   materials 2 = 2' : 'nodes 3 = 3';
+      g.text(Math.round((g.cols - note.length) / 2), g.rows - 2, note, 0.55);
+    }
+  };
+
+  // Object ids survive conversion: hover walks over the parts; each one's _ID attribute resolves to its dbId.
+  SCENES.ids = {
+    draw: function (g, t) {
+      var ax = 0.22, ay = 0.55 + Math.sin(t * 0.15) * 0.3;
+      var sc = Math.min(0.78, g.w * 0.55);
+      var hot = Math.floor(t / 2.4) % PRODUCT.length;
+      var centre = null;
+      for (var k = 0; k < PRODUCT.length; k++) {
+        var on = k === hot;
+        var c = wireBox(g, PRODUCT[k], ax, ay, 0, sc, on ? 1 : 0.3, on ? null : [3, 2]);
+        if (on) centre = c;
+      }
+      var id = PRODUCT[hot][6];
+      var pulse = 0.6 + 0.4 * Math.sin(t * 3);
+      g.put(centre[0] + 1, centre[1] + 1, '↖', pulse, true);
+      var tag = '_ID ' + id;
+      g.text(Math.min(g.cols - tag.length - 1, Math.round(centre[0]) + 3), Math.round(centre[1]) + 1, tag, 0.9);
+      var line = g.cols > 44 ? 'hover → _ID ' + id + ' → dbId ' + id + ' → select' : '_ID ' + id + ' → dbId ' + id;
+      g.text(Math.round((g.cols - line.length) / 2), g.rows - 2, line, 0.6);
+    }
+  };
+
+  // Units: read the unit and convert once to metres. Millimetres and inches land on the same size;
+  // a model without a unit stays dimensionless instead of being guessed.
+  SCENES.units = {
+    draw: function (g, t) {
+      var cases = [
+        ['mm', '1200 mm × 0.001', '1.200 m'],
+        ['in', '47.24 in × 0.0254', '1.200 m'],
+        ['none', '1200, no unit', 'stays 1200']
+      ];
+      var i = Math.floor(t / 3) % cases.length, k = cases[i];
+      var unknown = k[0] === 'none';
+      var len = Math.min(g.cols - 8, Math.max(16, Math.round(g.cols * 0.6)));
+      var c0 = Math.round((g.cols - len) / 2), r0 = Math.round(g.rows / 2) - 2;
+      // The part: a long plate, dashed when its real size is unknown.
+      g.box(c0, r0, len, 3, unknown ? 0.35 : 0.9);
+      if (unknown) for (var c = c0 + 1; c < c0 + len - 1; c += 2) g.put(c, r0 + 1, '?', 0.25);
+      // Dimension line under it.
+      var dr = r0 + 4;
+      g.put(c0, dr, '|', 0.7, true); g.put(c0 + len - 1, dr, '|', 0.7, true);
+      g.line(c0 + 1, dr, c0 + len - 2, dr, 0.45, '-');
+      g.text(Math.round(c0 + (len - k[2].length) / 2), dr, k[2], unknown ? 0.6 : 1);
+      g.text(2, 1, 'unit: ' + k[0], 0.9);
+      if (g.cols > 30) g.text(g.cols - k[1].length - 2, 1, k[1], 0.5);
+      for (var j = 0; j < cases.length; j++) g.put(g.cols / 2 - 2 + j * 2, g.rows - 2, j === i ? '●' : '·', j === i ? 0.9 : 0.35, true);
+    }
+  };
+
+  // Agentic coding, before and after. Before: one large change crawls from me to merge.
+  // After: I write the rules; agents ship small PRs, and a critic and CI reject some before merge.
+  SCENES.handoff = {
+    draw: function (g, t) {
+      var lanes = [
+        { label: 'before', y: Math.round(g.rows * 0.3), st: ['me', 'code', 'review', 'merge'], speed: 0.05, n: 1, size: 5 },
+        { label: 'after', y: Math.round(g.rows * 0.72), st: ['rules', 'agent', 'critic', 'ci', 'merge'], speed: 0.16, n: 4, size: 1 }
+      ];
+      var left = g.cols > 40 ? 9 : 2, right = g.cols - 3;
+      for (var l = 0; l < lanes.length; l++) {
+        var L = lanes[l], m = L.st.length, span = right - left;
+        if (g.cols > 40) g.text(1, L.y, L.label, 0.5);
+        else g.text(left, L.y - 3, L.label, 0.5);
+        for (var c = left; c <= right; c += 2) g.put(c, L.y, '·', 0.2);
+        var xs = [];
+        for (var s = 0; s < m; s++) {
+          var x = Math.round(left + span * s / (m - 1));
+          xs.push(x);
+          var name = L.st[s];
+          g.put(x, L.y, '┼', 0.6, true);
+          g.text(clamp(x - Math.floor(name.length / 2), 0, g.cols - name.length), L.y - 1, name, 0.65);
+        }
+        for (var k = 0; k < L.n; k++) {
+          var f = (t * L.speed + k / L.n) % 1;
+          var head = left + f * span;
+          // The critic (after-lane, station 2) rejects every third PR.
+          var rejected = l === 1 && (Math.floor(t * L.speed + k / L.n) * L.n + k) % 3 === 0;
+          if (rejected && head > xs[2]) {
+            if (head < xs[2] + 3) g.put(xs[2], L.y + 1, 'x', 0.9, true);
+            continue;
+          }
+          for (var j = 0; j < L.size; j++) if (head - j >= left) g.put(head - j, L.y, '■', 1 - j * 0.12, true);
+        }
+      }
+    }
+  };
+
   // Default: a slow flow field, shaded and dithered.
   SCENES.field = {
     init: function (g, rand) {
