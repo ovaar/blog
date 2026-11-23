@@ -1,5 +1,5 @@
 +++
-date = "2026-11-23"
+date = "2027-01-05T07:00:00+01:00"
 title = "Replacing ESLint with Oxlint, custom rules included"
 description = "Moving a React codebase from ESLint to Oxlint with its own lint rules: lint went from 17 s to 2 s, and here is what we lost, what broke quietly and what got slower."
 type = "post"

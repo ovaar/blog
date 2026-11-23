@@ -1,5 +1,5 @@
 +++
-date = "2026-11-23"
+date = "2026-12-01T07:00:00+01:00"
 title = "Six months of agentic coding: what actually changed"
 description = "After about 500 merged PRs with coding agents: write constraints instead of code, separate builder and critic, keep PRs small, and verify like a user."
 type = "post"

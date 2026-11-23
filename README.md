@@ -41,6 +41,22 @@ and merge it to `master`. Drafts are never deployed.
 `./scripts/deploy.sh` does the same build and push from your own machine, for when CI is not an
 option.
 
+## Schedule a post
+
+New posts go out one a week, on Tuesday at 07:00 CET, with a LinkedIn post at 08:30 CET.
+
+1. Give the post its publish date with a time: `date = "2026-12-01T07:00:00+01:00"`. Hugo leaves
+   a post with a future date out of the build, so it stays offline until then.
+2. Save the LinkedIn text as `social/linkedin/<date>-<slug>.md`. Hugo only reads `content/`, so
+   these files are never published.
+3. Merge to `master`. The deploy also runs every Tuesday at 06:00 UTC and publishes the posts
+   whose date has passed.
+
+GitHub turns the Tuesday build off after 60 days without a commit to this repository. Commit
+something before then, or run the workflow by hand from the Actions tab.
+
+To preview a scheduled post, use the drafts server: it also renders future posts.
+
 ## Guidelines
 
 https://refactoringenglish.com/chapters/rules-for-software-tutorials/about.md

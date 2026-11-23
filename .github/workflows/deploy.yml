@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - master
+  # Hugo leaves posts with a future date out of the build, so a scheduled post only appears after
+  # a build on or after its date. Posts are scheduled for Tuesday 07:00 CET; this build runs at
+  # 06:00 UTC (07:00 CET, 08:00 CEST), and GitHub may start it up to about an hour late.
+  # GitHub disables this schedule after 60 days without a commit to the repository.
+  schedule:
+    - cron: "0 6 * * 2"
   workflow_dispatch:
 
 # One deploy at a time; a newer push waits instead of racing the older one.

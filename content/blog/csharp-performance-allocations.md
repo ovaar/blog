@@ -1,5 +1,5 @@
 +++
-date = "2026-11-23"
+date = "2027-02-02T07:00:00+01:00"
 title = "C# performance 2: cutting allocations, then and now"
 description = "My 2020 list of C# allocation tips, checked against David Fowler's 2026 effort where AI agents opened about a hundred allocation PRs against ASP.NET Core: what still holds, what changed, and what the microbenchmarks did not show."
 type = "post"
