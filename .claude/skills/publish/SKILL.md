@@ -9,7 +9,7 @@ disable-model-invocation: true
 The deploy path has three hops. Each one must be green before the next is checked:
 
 1. Push to `master` in `ovaar/blog` triggers the **Deploy Blog** workflow (`.github/workflows/deploy.yml`).
-2. The workflow builds Hugo into the `public` submodule and pushes it to `ovaar/ovaar.github.io` `master`.
+2. The workflow clones `ovaar/ovaar.github.io` `master` fresh into `public` with the SSH deploy key, empties it, builds Hugo into it and pushes the result to `master`. Pages that no longer exist in the source disappear from the site. The pinned `public` submodule commit in `ovaar/blog` is not used.
 3. That push triggers a **legacy Pages build** (`build_type: legacy`). It does not run as a GitHub Actions workflow, so `gh run` never shows it. Read it from the Pages API.
 
 Publishing is done when every page this publish changed returns 200 on the live site with its new content.
@@ -19,8 +19,9 @@ Publishing is done when every page this publish changed returns 200 on the live 
 1. **Collect the changed pages.** Diff the branch against `origin/master` (or, when already on `master`, against the last commit that deployed successfully). Map each changed `content/blog/<slug>.md` to `https://ovaar.github.io/blog/<slug>/`, and `content/about.md` to `/about/`. Theme or config changes map to `/` and one existing post. Record the title of each page and one distinctive line from its body. This is the **verify list**.
    Done when every changed content file has a URL and a marker string.
 
-2. **Build check.** Run `docker compose run --rm blog --gc --minify --noTimes --renderToMemory`. `--renderToMemory` keeps the `public` submodule clean.
-   Done when Hugo exits 0 with no `ERROR` lines. Fix any errors before going on.
+2. **Build check.** Run `docker compose run --rm -e HUGO_ENVIRONMENT=production blog --gc --minify --noTimes --renderToMemory`. `--renderToMemory` keeps the `public` submodule clean.
+   Then list what will go live: every post under `content/blog/` without `draft = true` is published. Run `grep -L '^draft = true' content/blog/*.md` and compare it with what Thomas expects. A post that should stay unpublished but lacks the flag is a blocker: stop and ask.
+   Done when Hugo exits 0 with no `ERROR` lines and the publish list is confirmed. Fix any errors before going on.
 
 3. **Get the change onto `master`.**
    - On a feature branch: commit what is uncommitted, push, open a PR with `gh pr create` (or reuse the open PR), then `gh pr merge --squash --delete-branch`.
@@ -31,7 +32,7 @@ Publishing is done when every page this publish changed returns 200 on the live 
    Done when the run concludes `success`. On failure, read `gh run view <id> --log-failed`, report the cause, and stop. See *Known failures*.
 
 5. **Watch the Pages build.** Take the new head of the Pages repo:
-   `gh api repos/ovaar/ovaar.github.io/commits/master --jq '.sha,.commit.committer.date'`. Its date must be after the Deploy Blog run started. An older date means the workflow committed nothing (`No changes to commit` in the log), so say that.
+   `gh api repos/ovaar/ovaar.github.io/commits/master --jq '.sha,.commit.committer.date'`. Its date must be after the Deploy Blog run started. An older date means the workflow committed nothing (`Site unchanged, nothing to publish.` in the log), so say that.
    Then check `gh api repos/ovaar/ovaar.github.io/pages/builds/latest --jq '{status,commit,error}'`.
    Done when `commit` equals that head SHA and `status` is `built`. A build usually takes about a minute. While the status is `queued` or `building`, check again. If `status` is `errored`, report `error.message` and stop.
 
@@ -43,5 +44,14 @@ Publishing is done when every page this publish changed returns 200 on the live 
 
 ## Known failures
 
-- `remote: Permission to ovaar/ovaar.github.io.git denied` / `403` in the *Run docker compose* step: the `GH_PAT` secret in `ovaar/blog` has expired, or it lacks `Contents: write` on `ovaar/ovaar.github.io`. Only Thomas can rotate the token. Tell him to update the PAT and run `gh secret set GH_PAT -R ovaar/blog`, then re-run with `gh run rerun <id>`. Then continue at step 4.
+- `Permission denied (publickey)` in *Clone the site repository*, or `The key you are authenticating with has been marked as read only` in *Publish to ovaar.github.io*: the deploy key is missing, was removed, or has no write access. The workflow authenticates with an SSH deploy key: its public half is a deploy key with write access on `ovaar/ovaar.github.io`, its private half is the `PAGES_DEPLOY_KEY` Actions secret of `ovaar/blog`. A deploy key does not expire. Creating credentials is Thomas's call, so give him these commands to run with `!` and don't run them yourself:
+  ```sh
+  ssh-keygen -t ed25519 -N "" -C "ovaar/blog Deploy Blog workflow" -f /tmp/blog_deploy_key
+  gh repo deploy-key add /tmp/blog_deploy_key.pub -R ovaar/ovaar.github.io --allow-write --title "ovaar/blog Deploy Blog workflow"
+  gh secret set PAGES_DEPLOY_KEY -R ovaar/blog < /tmp/blog_deploy_key
+  rm /tmp/blog_deploy_key /tmp/blog_deploy_key.pub
+  ```
+  `gh secret set` encrypts the value and stores it on GitHub as a repository secret; nothing stays on the machine once the key files are removed. Remove the old deploy key with `gh repo deploy-key delete <id> -R ovaar/ovaar.github.io` if one is listed. Then re-run with `gh run rerun <id>` and continue at step 4.
+- `! [rejected] HEAD -> master (fetch first)` in *Publish to ovaar.github.io*: something else pushed to `ovaar/ovaar.github.io` while the run was building. Re-run with `gh run rerun <id>`; the clone picks up the new head.
+- `mkdir /cache/images: permission denied` in *Build with Hugo*: the Hugo cache volume is not mounted. The build step must keep `-v "${{ runner.temp }}/hugo_cache:/cache"`.
 - Deploy Blog green but the live page is old: either the Pages build is still running (step 5) or the CDN is serving cache. Retry with a new cache-buster value before suspecting the build.

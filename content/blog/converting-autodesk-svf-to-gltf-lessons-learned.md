@@ -2,6 +2,7 @@
 date = "2026-11-23"
 title = "Autodesk SVF to glTF: what the tutorials leave out"
 description = "Four pitfalls converting Autodesk SVF to glTF for Three.js: keep the node tree, carry dbId as _ID, preserve material names, never guess units."
+draft = true
 type = "post"
 categories = ["Development"]
 tags = ["3d", "gltf", "autodesk", "typescript"]
