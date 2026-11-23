@@ -42,6 +42,11 @@ jobs:
           # Start from an empty tree so pages that no longer exist are removed from the site.
           find public -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 
+      # Posts dated with a bare day get the time of day they were published, so posts that
+      # share a day are listed newest first. Edits this checkout only; nothing commits it.
+      - name: Stamp publish times on post dates
+        run: ./scripts/stamp-publish-times.sh
+
       - name: Build with Hugo
         run: |
           mkdir -p "${{ runner.temp }}/hugo_cache"
