@@ -7,6 +7,9 @@
   (dict "kind" "graph" "name" "Graph" "topics" "Agents · Conan · CMake" "note" "A hub with its dependencies or tools. Messages travel along the edges; for agents that is a tool call, for a package manager a resolved requirement.")
   (dict "kind" "mesh" "name" "Mesh" "topics" "3D · glTF" "note" "A rotating torus as a quad wireframe, with depth carried by brightness: what every converted model is underneath its materials.")
   (dict "kind" "flow" "name" "Packets" "topics" "Linux · Docker · Git" "note" "Data moving between two endpoints on parallel lanes, at different rates and in both directions.")
+  (dict "kind" "csg" "name" "Boolean operations" "topics" "Geometry · CSG" "note" "A circle and a square combined by union, intersection and difference. With signed distances each operation is a min or a max; the removed material stays as faint dots.")
+  (dict "kind" "parity" "name" "Inside or outside" "topics" "Geometry · CSG" "note" "A ray from a point through a star-shaped outline. Odd crossings mean inside, even mean outside, whichever way the ray points.")
+  (dict "kind" "csgsteps" "name" "Mesh boolean" "topics" "Geometry · CSG" "note" "The four steps of a mesh boolean on a 2D slice: find where the outlines cross, cut them there, classify each piece as in or out, keep what the operation asks for.")
   (dict "kind" "field" "name" "Noise field" "topics" "Everything else" "note" "Interfering sine waves, dithered into characters. The fallback for posts without a more specific subject.")
 }}
 <div class="page">

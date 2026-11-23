@@ -556,6 +556,27 @@ code {
 }
 .prose .center { text-align: initial; }
 .prose figure.art-figure .art { aspect-ratio: 16 / 7; }
+.prose figure.art-figure .art--live { aspect-ratio: 16 / 9; }
+.art--live canvas { cursor: grab; touch-action: none; }
+.art--live canvas:active { cursor: grabbing; }
+.art--live canvas:focus-visible { outline: 2px solid var(--panel-ink); outline-offset: -4px; }
+.art-controls {
+  display: flex; flex-wrap: wrap; gap: 10px 24px;
+  margin-top: 12px;
+  font: 400 12.5px/1 var(--mono);
+}
+.art-controls__group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.art-controls__group > span { color: var(--mute); margin-right: 4px; }
+.art-controls button {
+  font: inherit; color: var(--ink); background: transparent;
+  border: 1px solid var(--line); padding: 7px 10px; cursor: pointer;
+}
+.art-controls button:hover { border-color: var(--ink); }
+.art-controls button[aria-pressed="true"] { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+@media (max-width: 560px) {
+  .prose figure.art-figure .art--live { aspect-ratio: 4 / 3; }
+  .art-controls button { padding: 6px 7px; }
+}
 
 /* ---------- Article foot ---------- */
 

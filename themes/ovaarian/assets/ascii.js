@@ -527,6 +527,270 @@
     }
   };
 
+  /* ---------- boolean operations (CSG) ----------
+   * Three figures for the CSG post. Inside an article figure they are interactive: the reader
+   * drags the handle (shape B or the probe) and picks options from buttons the panel adds
+   * under the canvas. Elsewhere (post panel, gallery) they animate through the same states.
+   */
+
+  var CSG_OPS = [['union', 'A ∪ B'], ['intersect', 'A ∩ B'], ['subtract', 'A − B']];
+  var CSG_FORMULA = { union: 'min(a, b)', intersect: 'max(a, b)', subtract: 'max(a, -b)' };
+
+  function cross2(ax, ay, bx, by) { return ax * by - ay * bx; }
+
+  // Signed distances, negative inside.
+  function sdCircle(x, y, cx, cy, r) { return Math.hypot(x - cx, y - cy) - r; }
+  function sdBox(x, y, cx, cy, h) {
+    var qx = Math.abs(x - cx) - h, qy = Math.abs(y - cy) - h;
+    return Math.hypot(Math.max(qx, 0), Math.max(qy, 0)) + Math.min(Math.max(qx, qy), 0);
+  }
+  function csgDist(op, a, b) {
+    return op === 'union' ? Math.min(a, b) : op === 'intersect' ? Math.max(a, b) : Math.max(a, -b);
+  }
+  function csgKeep(op, inA, inB) {
+    return op === 'union' ? inA || inB : op === 'intersect' ? inA && inB : inA && !inB;
+  }
+
+  function polygon(n, r, cx, cy, rot) {
+    var P = [];
+    for (var i = 0; i < n; i++) P.push([cx + r * Math.cos(rot + i * TAU / n), cy + r * Math.sin(rot + i * TAU / n)]);
+    return P;
+  }
+  function starPolygon(n, R, r, cx, cy) {
+    var P = [];
+    for (var i = 0; i < n * 2; i++) {
+      var a = -Math.PI / 2 + i * Math.PI / n, d = i % 2 ? r : R;
+      P.push([cx + d * Math.cos(a), cy + d * Math.sin(a)]);
+    }
+    return P;
+  }
+
+  // Crossing test along a ray from (px, py) in direction (dx, dy). Every vertex is moved into the
+  // ray's frame; an edge counts when its ends lie on different sides of the ray (half-open), so a
+  // ray through a vertex is counted once and a ray grazing a tip is counted zero or two times.
+  function rayCrossings(px, py, dx, dy, P) {
+    var hits = [];
+    for (var i = 0; i < P.length; i++) {
+      var A = P[i], B = P[(i + 1) % P.length];
+      var ax = (A[0] - px) * dx + (A[1] - py) * dy, ay = -(A[0] - px) * dy + (A[1] - py) * dx;
+      var bx = (B[0] - px) * dx + (B[1] - py) * dy, by = -(B[0] - px) * dy + (B[1] - py) * dx;
+      if ((ay > 0) === (by > 0)) continue;
+      var s = ax + (0 - ay) * (bx - ax) / (by - ay);
+      if (s > 0) hits.push(s);
+    }
+    hits.sort(function (u, v) { return u - v; });
+    return hits;
+  }
+  function insidePoly(x, y, P) { return rayCrossings(x, y, 1, 0, P).length % 2 === 1; }
+
+  // Cuts the outline of P wherever it crosses the outline of Q and groups the cut edges into
+  // pieces: runs of outline between two crossings. Each piece is classified against Q.
+  function splitOutline(P, Q) {
+    var frags = [], crossings = [];
+    for (var i = 0; i < P.length; i++) {
+      var a = P[i], b = P[(i + 1) % P.length], ex = b[0] - a[0], ey = b[1] - a[1];
+      var ts = [];
+      for (var j = 0; j < Q.length; j++) {
+        var c = Q[j], d = Q[(j + 1) % Q.length], fx = d[0] - c[0], fy = d[1] - c[1];
+        var den = cross2(ex, ey, fx, fy);
+        if (Math.abs(den) < 1e-12) continue;
+        var wx = c[0] - a[0], wy = c[1] - a[1];
+        var t = cross2(wx, wy, fx, fy) / den, u = cross2(wx, wy, ex, ey) / den;
+        if (t > 0 && t < 1 && u >= 0 && u < 1) ts.push(t);
+      }
+      ts.sort(function (u, v) { return u - v; });
+      var prev = 0, cut = false;
+      for (var k = 0; k <= ts.length; k++) {
+        var tk = k < ts.length ? ts[k] : 1;
+        frags.push({ a: [a[0] + ex * prev, a[1] + ey * prev], b: [a[0] + ex * tk, a[1] + ey * tk], cut: cut });
+        if (k < ts.length) { crossings.push([a[0] + ex * tk, a[1] + ey * tk]); cut = true; }
+        else cut = false;
+        prev = tk;
+      }
+    }
+    var start = 0;
+    for (var f = 0; f < frags.length; f++) if (frags[f].cut) { start = f; break; }
+    var pieces = [], cur = null;
+    for (var n = 0; n < frags.length; n++) {
+      var fr = frags[(start + n) % frags.length];
+      if (!cur || fr.cut) { cur = { frags: [] }; pieces.push(cur); }
+      cur.frags.push(fr);
+    }
+    pieces.forEach(function (pc) {
+      var m = pc.frags[Math.floor(pc.frags.length / 2)];
+      pc.mid = [(m.a[0] + m.b[0]) / 2, (m.a[1] + m.b[1]) / 2];
+      pc.dir = [m.b[0] - m.a[0], m.b[1] - m.a[1]];
+      pc.inside = insidePoly(pc.mid[0], pc.mid[1], Q);
+    });
+    return { pieces: pieces, crossings: crossings };
+  }
+
+  // The animated stand-in for the reader outside an interactive figure.
+  function csgHandle(input, t, def) {
+    return input.live ? input.h : [def[0] + Math.sin(t * 0.4) * 0.14, def[1] + Math.cos(t * 0.3) * 0.1];
+  }
+  function csgOption(input, key, t, options, period) {
+    return input.live ? input.ui[key] : options[Math.floor(t / period) % options.length][0];
+  }
+
+  // Arrow glyph for a direction in unit space (y runs down).
+  function arrow(nx, ny) {
+    var k = Math.round(Math.atan2(-ny, nx) / (Math.PI / 4));
+    return ['→', '↗', '↑', '↖', '←', '↙', '↓', '↘'][(k + 8) % 8];
+  }
+
+  // Wide panels get bigger shapes; a phone-width panel stays at 1.
+  function csgZoom(g) { return clamp(g.w * 0.75, 0.8, 1.35); }
+
+  function hint(g, input, str) {
+    if (input.live && g.cols > str.length + 14) g.text(2, g.rows - 2, str, 0.4);
+  }
+
+  // What the operations mean: a point is in the result when it passes the set test. With signed
+  // distances that test is min or max. Removed material stays as faint dots.
+  SCENES.csg = {
+    label: 'A circle A and a square B, combined with the chosen boolean operation. Drag B, or focus the figure and use the arrow keys.',
+    handle: [0.38, 0.08],
+    controls: [{ key: 'op', label: 'operation', options: CSG_OPS }],
+    draw: function (g, t, s, seed, input) {
+      var op = csgOption(input, 'op', t, CSG_OPS, 4), h = csgHandle(input, t, this.handle);
+      var z = csgZoom(g), ax = -0.3 * z, ay = 0, ar = 0.55 * z, hb = 0.42 * z;
+      var edge = 0.6 / g.sy;
+      for (var r = 0; r < g.rows; r++) {
+        var y = (r - g.rows / 2) / g.sy;
+        for (var c = 0; c < g.cols; c++) {
+          var x = (c - g.cols / 2) / g.sx;
+          var a = sdCircle(x, y, ax, ay, ar), b = sdBox(x, y, h[0], h[1], hb), d = csgDist(op, a, b);
+          if (Math.abs(d) < edge) g.put(c, r, '#', 1);
+          else if (d < 0) g.put(c, r, shade(clamp(dither(0.42, c, r, 0.5), 0, 1)), 0.55);
+          else if (Math.abs(a) < edge || Math.abs(b) < edge) g.put(c, r, '·', 0.35);
+          else if (a < 0 || b < 0) g.put(c, r, '·', 0.13);
+        }
+      }
+      g.text(Math.round(g.col(ax - 0.2)), Math.round(g.row(ay)), 'A', 1);
+      g.text(Math.round(g.col(h[0] + 0.18)), Math.round(g.row(h[1])), 'B', 1);
+      var name = CSG_OPS.filter(function (o) { return o[0] === op; })[0][1];
+      g.text(2, 1, g.cols > 36 ? name + '    ' + CSG_FORMULA[op] : name, 0.9);
+      hint(g, input, 'drag B');
+    }
+  };
+
+  // Inside or outside? Cast a ray from the point and count how often it crosses the outline:
+  // odd is inside, even is outside, whatever the direction.
+  SCENES.parity = {
+    label: 'A star-shaped outline and a point with a ray. The crossings along the ray are numbered; an odd count means the point is inside. Drag the point, or focus the figure and use the arrow keys.',
+    handle: [-0.12, 0.12],
+    controls: [{ key: 'dir', label: 'ray', options: [['e', '→'], ['ne', '↗'], ['n', '↑'], ['w', '←']] }],
+    draw: function (g, t, s, seed, input) {
+      var dirs = { e: [1, 0], ne: [Math.SQRT1_2, -Math.SQRT1_2], n: [0, -1], w: [-1, 0] };
+      var dk = csgOption(input, 'dir', t, this.controls[0].options, 5);
+      var D = dirs[dk];
+      var p = input.live ? input.h : [Math.sin(t * 0.21) * Math.min(1.1, g.w * 0.7), Math.sin(t * 0.33 + 1) * 0.55];
+      var R = Math.min(0.85, g.w * 0.8);
+      var S = starPolygon(5, R, R * 0.45, 0, 0.06);
+      // Light fill, so the true answer is visible next to the count.
+      for (var r = 1; r < g.rows; r += 1) {
+        for (var c = 1; c < g.cols; c += 2) {
+          if (insidePoly((c - g.cols / 2) / g.sx, (r - g.rows / 2) / g.sy, S)) g.put(c, r, '·', 0.16);
+        }
+      }
+      for (var i = 0; i < S.length; i++) {
+        var A = S[i], B = S[(i + 1) % S.length];
+        g.line(g.col(A[0]), g.row(A[1]), g.col(B[0]), g.row(B[1]), 0.75);
+      }
+      var far = 2 * g.w + 2;
+      g.line(g.col(p[0]), g.row(p[1]), g.col(p[0] + D[0] * far), g.row(p[1] + D[1] * far), 0.45, null, [2, 1]);
+      var hits = rayCrossings(p[0], p[1], D[0], D[1], S);
+      for (var k = 0; k < hits.length; k++) {
+        var hc = g.col(p[0] + D[0] * hits[k]), hr = g.row(p[1] + D[1] * hits[k]);
+        g.put(hc, hr, '×', 1, true);
+        g.text(Math.round(hc) + 1, Math.round(hr) - 1, String(k + 1), 0.9);
+      }
+      var inside = hits.length % 2 === 1;
+      g.put(g.col(p[0]), g.row(p[1]), inside ? '●' : '○', 1, true);
+      var n = hits.length;
+      var msg = n + (n === 1 ? ' crossing' : ' crossings') + (inside ? ': odd, inside' : ': even, outside');
+      g.text(2, 1, g.cols > msg.length + 4 ? msg : (inside ? 'odd: in' : 'even: out'), 0.9);
+      hint(g, input, 'drag the point');
+    }
+  };
+
+  // How a mesh boolean is computed, on the outlines of a 2D slice: find where the outlines cross,
+  // cut them there, classify every piece as inside or outside the other shape, keep the pieces the
+  // operation asks for. Kept pieces show their outward normal; for A − B, B's pieces turn inward.
+  SCENES.csgsteps = {
+    label: 'The outlines of a polygon A and a square B, taken through the four steps of a mesh boolean: find crossings, split, classify, keep. Drag B, or focus the figure and use the arrow keys.',
+    handle: [0.36, 0.06],
+    controls: [
+      { key: 'step', label: 'step', options: [['1', '1 cross'], ['2', '2 split'], ['3', '3 classify'], ['4', '4 keep']] },
+      { key: 'op', label: 'operation', options: CSG_OPS }
+    ],
+    draw: function (g, t, s, seed, input) {
+      var step = +csgOption(input, 'step', t, this.controls[0].options, 3);
+      var op = csgOption(input, 'op', t, CSG_OPS, 12);
+      var h = csgHandle(input, t, this.handle);
+      var z = csgZoom(g), acx = -0.28 * z;
+      var PA = polygon(12, 0.55 * z, acx, 0, 0.13);
+      var PB = polygon(4, 0.42 * z * Math.SQRT2, h[0], h[1], Math.PI / 4 + 0.35);
+      var sa = splitOutline(PA, PB), sb = splitOutline(PB, PA);
+      var both = [['A', sa, false], ['B', sb, true]];
+
+      if (step === 4) {
+        for (var r = 1; r < g.rows; r++) {
+          for (var c = 1; c < g.cols; c += 2) {
+            var x = (c - g.cols / 2) / g.sx, y = (r - g.rows / 2) / g.sy;
+            if (csgKeep(op, insidePoly(x, y, PA), insidePoly(x, y, PB))) g.put(c, r, '·', 0.32);
+          }
+        }
+      }
+
+      for (var q = 0; q < 2; q++) {
+        var isB = both[q][2], pieces = both[q][1].pieces;
+        for (var i = 0; i < pieces.length; i++) {
+          var pc = pieces[i], style;
+          if (step === 1) style = [0.55, null];
+          else if (step === 2) style = [i % 2 ? 0.4 : 0.95, null];
+          else if (step === 3) style = pc.inside ? [0.6, [2, 1]] : [0.95, null];
+          else {
+            var keep = op === 'union' ? !pc.inside : op === 'intersect' ? pc.inside : (isB ? pc.inside : !pc.inside);
+            style = keep ? [1, null] : [0.16, [2, 1]];
+            pc.keep = keep;
+          }
+          for (var f = 0; f < pc.frags.length; f++) {
+            var fr = pc.frags[f];
+            g.line(g.col(fr.a[0]), g.row(fr.a[1]), g.col(fr.b[0]), g.row(fr.b[1]), style[0], null, style[1]);
+          }
+          if (step === 3) {
+            var tag = pc.inside ? 'in' : 'out';
+            g.text(Math.round(g.col(pc.mid[0])) - 1, Math.round(g.row(pc.mid[1])) + (pc.mid[1] > (isB ? h[1] : 0) ? 1 : -1), tag, 0.85);
+          }
+          if (step === 4 && pc.keep) {
+            // Outward normal of the result: the side of the piece that is not in the result.
+            var len = Math.hypot(pc.dir[0], pc.dir[1]) || 1, nx = pc.dir[1] / len, ny = -pc.dir[0] / len, e = 0.03;
+            var mx = pc.mid[0] + nx * e, my = pc.mid[1] + ny * e;
+            if (csgKeep(op, insidePoly(mx, my, PA), insidePoly(mx, my, PB))) { nx = -nx; ny = -ny; }
+            g.put(g.col(pc.mid[0] + nx * 0.1), g.row(pc.mid[1] + ny * 0.14), arrow(nx, ny), 1, true);
+          }
+        }
+      }
+      if (step <= 2) {
+        sa.crossings.forEach(function (p) { g.put(g.col(p[0]), g.row(p[1]), step === 1 ? '×' : '+', 1, true); });
+      }
+      g.text(Math.round(g.col(acx)), Math.round(g.row(0)), 'A', 0.9);
+      g.text(Math.round(g.col(h[0])), Math.round(g.row(h[1])), 'B', 0.9);
+
+      var n = sa.crossings.length;
+      var lines = {
+        1: ['1  find the crossings: ' + n, '1  crossings: ' + n],
+        2: ['2  cut both outlines into ' + (n || 1) + ' pieces each', '2  split'],
+        3: ['3  classify: inside the other shape?', '3  in / out'],
+        4: [{ union: '4  keep A out of B, B out of A', intersect: '4  keep A in B, B in A', subtract: '4  keep A out of B, B in A, flipped' }[op], '4  ' + op]
+      }[step];
+      g.text(2, 1, g.cols > lines[0].length + 4 ? lines[0] : lines[1], 0.9);
+      hint(g, input, 'drag B');
+    }
+  };
+
   // Default: a slow flow field, shaded and dithered.
   SCENES.field = {
     init: function (g, rand) {
@@ -565,8 +829,95 @@
     this.seed = hash((canvas.dataset.seed || '') + this.kind);
     this.cell = parseFloat(canvas.dataset.cell) || 12;
     this.offset = (this.seed % 1000) / 37;
+    this.t = 9;
+    // Reader input survives resizes, unlike the scene state. `live` is set only inside an
+    // article figure; scenes animate their options and handle when it is false.
+    var sc = this.scene, input = { live: false, ui: {}, h: sc.handle ? sc.handle.slice() : null };
+    (sc.controls || []).forEach(function (ctl) { input.ui[ctl.key] = ctl.options[0][0]; });
+    this.input = input;
     this.resize();
+    var fig = canvas.closest('.art-figure');
+    if (fig && (sc.controls || sc.handle)) this.interactive();
   }
+
+  Panel.prototype.redraw = function () { this.draw(this.t); };
+
+  // Pixel position on the canvas to unit space (the inverse of Grid.col/row, at the glyph centre).
+  Panel.prototype.unit = function (e) {
+    var rect = this.canvas.getBoundingClientRect(), g = this.grid;
+    var c = (e.clientX - rect.left - this.ox) / this.cw - 0.5, r = (e.clientY - rect.top - this.oy) / this.ch - 0.5;
+    return [(c - g.cols / 2) / g.sx, (r - g.rows / 2) / g.sy];
+  };
+
+  Panel.prototype.moveHandle = function (x, y) {
+    var g = this.grid, m = 0.15;
+    this.input.h = [clamp(x, -g.w + m, g.w - m), clamp(y, -1 + m, 1 - m)];
+    this.redraw();
+  };
+
+  Panel.prototype.interactive = function () {
+    var p = this, sc = this.scene, cv = this.canvas, input = this.input, art = cv.parentNode;
+    input.live = true;
+    art.removeAttribute('aria-hidden');
+    art.classList.add('art--live');
+    cv.setAttribute('role', 'img');
+    cv.setAttribute('aria-label', sc.label || '');
+
+    if (sc.controls) {
+      var bar = document.createElement('div');
+      bar.className = 'art-controls';
+      sc.controls.forEach(function (ctl) {
+        var grp = document.createElement('div');
+        grp.className = 'art-controls__group';
+        grp.setAttribute('role', 'group');
+        grp.setAttribute('aria-label', ctl.label);
+        var name = document.createElement('span');
+        name.textContent = ctl.label;
+        grp.appendChild(name);
+        ctl.options.forEach(function (o) {
+          var b = document.createElement('button');
+          b.type = 'button';
+          b.textContent = o[1];
+          b.setAttribute('aria-pressed', String(input.ui[ctl.key] === o[0]));
+          b.addEventListener('click', function () {
+            input.ui[ctl.key] = o[0];
+            grp.querySelectorAll('button').forEach(function (x) { x.setAttribute('aria-pressed', String(x === b)); });
+            p.redraw();
+          });
+          grp.appendChild(b);
+        });
+        bar.appendChild(grp);
+      });
+      art.insertAdjacentElement('afterend', bar);
+    }
+
+    if (!sc.handle) return;
+    cv.tabIndex = 0;
+    var grab = null;
+    cv.addEventListener('pointerdown', function (e) {
+      var u = p.unit(e), h = input.h;
+      // Near the handle, drag it by the point grabbed; elsewhere, jump to the pointer.
+      grab = Math.hypot(u[0] - h[0], u[1] - h[1]) < 0.35 ? [h[0] - u[0], h[1] - u[1]] : [0, 0];
+      cv.setPointerCapture(e.pointerId);
+      p.moveHandle(u[0] + grab[0], u[1] + grab[1]);
+      e.preventDefault();
+    });
+    cv.addEventListener('pointermove', function (e) {
+      if (!grab) return;
+      var u = p.unit(e);
+      p.moveHandle(u[0] + grab[0], u[1] + grab[1]);
+    });
+    var release = function () { grab = null; };
+    cv.addEventListener('pointerup', release);
+    cv.addEventListener('pointercancel', release);
+    cv.addEventListener('keydown', function (e) {
+      var d = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[e.key];
+      if (!d) return;
+      e.preventDefault();
+      var step = e.shiftKey ? 0.15 : 0.04;
+      p.moveHandle(input.h[0] + d[0] * step, input.h[1] + d[1] * step);
+    });
+  };
 
   Panel.prototype.resize = function () {
     var rect = this.canvas.getBoundingClientRect();
@@ -592,8 +943,9 @@
   Panel.prototype.draw = function (t) {
     var g = this.grid;
     if (!g) return;
+    this.t = t;
     g.clear();
-    this.scene.draw(g, t + this.offset, this.state, this.seed);
+    this.scene.draw(g, t + this.offset, this.state, this.seed, this.input);
     var ctx = this.ctx;
     ctx.clearRect(0, 0, this.w, this.h);
     ctx.font = this.font;
@@ -618,7 +970,8 @@
     if (now - last < 1000 / FPS) return;
     last = now;
     var t = (now - start) / 1000;
-    visible.forEach(function (p) { p.draw(t); });
+    // Interactive figures only change on input; they skip the clock.
+    visible.forEach(function (p) { if (!p.input.live) p.draw(t); });
   }
 
   function run() {
