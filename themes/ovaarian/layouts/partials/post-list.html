@@ -1,0 +1,7 @@
+{{- /* Expects a page collection; renders it grouped by year, newest first. */ -}}
+{{- range (sort . "Date" "desc").GroupByDate "2006" }}
+<h3 class="year">{{ .Key }}</h3>
+<ul class="posts">
+  {{- range .Pages }}{{ partial "post-row.html" . }}{{ end }}
+</ul>
+{{- end }}

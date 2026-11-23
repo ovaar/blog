@@ -1,15 +1,13 @@
 {{ define "main" }}
-  <section class="taxonomy-terms">
-    <header class="taxonomy-header">
-      <h1>{{ .Title }}</h1>
-      <p>Browse all {{ .Data.Plural | default "items" }}</p>
-    </header>
-    <div>
-        <ul class="terms-list">
-        {{ range $name, $taxonomy := .Site.Taxonomies.tags }}
-            <li><a href="{{ $.Site.BaseURL }}{{ $.Data.Plural }}/{{ $name | urlize }}/">#{{ $name }} ({{ $taxonomy.Count }})</a></li>
-        {{ end }}
-        </ul>
-    </div>
-  </section>
+<div class="page">
+  <header class="page-head">
+    <p class="eyebrow">Index<span class="sep">·</span>{{ len .Data.Terms }} {{ .Data.Plural }}</p>
+    <h1>Topics</h1>
+  </header>
+  <div class="tags topic-cloud" style="margin-top: 40px">
+    {{- range .Data.Terms.Alphabetical }}
+    <a class="tag" href="{{ .Page.RelPermalink }}">{{ .Term }}<sup>{{ .Count }}</sup></a>
+    {{- end }}
+  </div>
+</div>
 {{ end }}

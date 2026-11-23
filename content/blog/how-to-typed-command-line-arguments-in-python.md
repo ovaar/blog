@@ -1,14 +1,13 @@
 +++
 date = "2024-04-22"
-title = "How to typed command line arguments in python"
+title = "Typed Python CLI arguments with argparse and StrEnum"
+description = "Derive argparse choices from Python types: use StrEnum and the type parameter so a build script's CLI options update when the enum changes."
 type = "post"
 categories = ["Development"]
 tags = ["python"]
 +++
 
-# How to typed command line arguments in python
-
-Creating tools with python is a common practice due to its ease of use and productivity. Now python already has good built-in support for parsing command-line arguments, but we can take it one step further. 
+Creating tools with python is a common practice due to its ease of use and productivity. Python already has good built-in support for parsing command-line arguments, but we can take it one step further. 
 
 Let's take the following example where we would like to create a platform independent build script that should be able to accept the build type and an option to rebuild.
 
@@ -124,3 +123,5 @@ File "build.py", line 38, in to_path
     raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), arg)
 FileNotFoundError: [Errno 2] No such file or directory: 'nopath.sln'
 ```
+
+To call an arbitrary function in a script instead of a fixed set of options, see [how to call a function of a file in Python](/blog/how-to-call-function-of-file-in-python/).

@@ -1,12 +1,11 @@
 +++
 date = "2024-08-01"
-title = "Azure pipelines cross-platform scripts"
+title = "Cross-platform Bash scripts in Azure Pipelines"
+description = "One Bash script for Windows, macOS and Linux Azure Pipelines agents: setting up Git for Windows bash and making a failing Bash step fail the job."
 type = "post"
 categories = ["Devops"]
 tags = ["devops", "azure"]
 +++
-
-# Azure pipelines cross-platform scripts
 
 To keep things simple when setting up a CI/CD pipeline for a cross-platform application we cautiously have to consider our options for running the steps in what scripting language, because we don't want to end up with scripts that do the same thing functionally, but are different for each platform, which means extra maintenance and complexity for the maintainers.
 
@@ -118,3 +117,4 @@ set -euo pipefail
 # -o pipefail Exit if a pipe returns a non-zero status
 ```
 
+Next: [running Python cross-platform in Azure Pipelines](/blog/azure-pipelines-cross-platform-python-scripting/) on the same self-hosted agents.

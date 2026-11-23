@@ -5,6 +5,8 @@ theme = "ovaarian"
 
 enableEmoji=true
 enableRobotsTXT = true
+# Lastmod (sitemap, dateModified) comes from the last git commit touching the file.
+enableGitInfo = true
 
 [taxonomies]
    tag = "tags"
@@ -12,21 +14,31 @@ enableRobotsTXT = true
 
 [params.social]
     github = "https://github.com/ovaar"
-    linkedin = "https://www.linkedin.com/in/thomas-reynders-6bb57057/"
+    linkedin = "https://www.linkedin.com/in/thomasreynders/"
 
 [params]
     Author = "Ovaar"
-    Description = "Software Engineering blog"
+    Description = "Software engineering notes by Thomas Reynders on C++ and Conan, Python tooling, CI pipelines, 3D on the web and working with coding agents."
+    ogImage = "og-default.png"
+    FullName = "Thomas Reynders"
+    Headline = "Notes on building software."
+    Motto = "Build. Measure. Improve."
+    Intro = "Software engineer from Leeuwarden. I write about 3D on the web, C++ and Python tooling, CI pipelines, and working alongside coding agents. More [about me](/about/)."
 
 [permalinks]
     posts = "/:year/:month/:title/"
 
 [imaging]
     resampleFilter = "box"
-    quality = 75
-    hint = "photo"
     anchor = "smart"
     bgColor = "#ffffff"
+
+[imaging.jpeg]
+    quality = 75
+
+[imaging.webp]
+    quality = 75
+    hint = "photo"
 
 [imaging.exif]
     includeFields = ""

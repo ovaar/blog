@@ -1,6 +1,7 @@
 +++
 date = "2020-07-17"
 title = "First Post"
+description = "Why I started a software engineering blog: writing about solutions I and colleagues built, reflecting on my career, and getting better at writing."
 type = "post"
 categories = ["me"]
 tags = ["me"]

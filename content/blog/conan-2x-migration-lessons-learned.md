@@ -1,34 +1,24 @@
 +++
 date = "2025-09-12"
 title = "Conan 2.x migration and the lessons learned"
+description = "Migrating a C++ product from Conan 1 to 2: recipe and package revisions, toolchain and deps generators, the Conan API, deployers and the pitfalls I hit."
 type = "post"
 categories = ["software", "migration", "Conan"]
 tags = ["conan"]
 +++
 
-- [1. Conan 2.x migration and the lessons learned](#1-conan-2x-migration-and-the-lessons-learned)
-  - [1.1. The path to Conan 2](#11-the-path-to-conan-2)
-  - [1.2. The Conan 2.x migration](#12-the-conan-2x-migration)
-  - [1.3. Conan 2.x revisions and hashes](#13-conan-2x-revisions-and-hashes)
-    - [1.3.1. Recipe Revisions (RREV)](#131-recipe-revisions-rrev)
-    - [1.3.2. Package ID](#132-package-id)
-    - [1.3.3. Package Revisions (PREV)](#133-package-revisions-prev)
-    - [1.3.4. Obtaining different revisions in ~~Linux~~ Unix and Windows](#134-obtaining-different-revisions-in-linux-unix-and-windows)
-  - [1.4. Conan Integrations](#14-conan-integrations)
-    - [1.4.1. Conan Toolchain generator](#141-conan-toolchain-generator)
-    - [1.4.2. Conan Deps generator](#142-conan-deps-generator)
-      - [XcodeToolchain changes](#xcodetoolchain-changes)
-  - [1.5. Conan APIs](#15-conan-apis)
-    - [1.5.1. Loading a conan profile via the ConanAPI](#151-loading-a-conan-profile-via-the-conanapi)
-    - [1.5.2. Computing the dependency graph via the Conan Graph API](#152-computing-the-dependency-graph-via-the-conan-graph-api)
-  - [1.6. Deployers](#16-deployers)
-
-
-# 1. Conan 2.x migration and the lessons learned
-
 In this blog post I will cover some key changes in Conan 2.x, how it works and some pitfalls. I do assume you are (somewhat) familiar with Conan already. In the first paragraphs I will share some backstory and then we will go into the technical details. Otherwise, skip to [The Conan 2.x migration](#the-conan-2x-migration).
 
-## 1.1. The path to Conan 2
+## Pitfalls at a glance
+
+* The same recipe can get a different recipe revision (RREV) on Windows and Unix, because line endings are part of the content hash. Forcing `eol=lf` in `.gitattributes` fixed it for me.
+* Any change to an exported recipe file, even whitespace, produces a new RREV.
+* Package names must be lowercase, and special characters like `.` are discouraged.
+* `imports()` is removed; that logic moves to `generate()`.
+* XcodeToolchain adds an architecture filter to every variable in the `*.xcconfig` files, which differs from Conan 1.x.
+* Deployers can get slow with large dependencies like `boost`; `tools.deployer:symlinks=True` helps.
+
+## The path to Conan 2
 
 [BIMcollab](https://www.bimcollab.com/en/) builds high‑performance, model-based collaboration software that helps project teams improve BIM model quality. One of those products, BIMcollab Zoom, is an IFC model viewer focused on fast navigation, model checking (e.g. clash detection), and issue tracking. The product has matured over roughly nine years (I’ve been fortunate to contribute during the last five), during which its architecture naturally evolved as capabilities, people, and expectations grew.
 
@@ -43,7 +33,7 @@ A later strategic move—migrating CI/CD from Jenkins to Azure DevOps—arrived 
 Before we dive into the technical details I want to thank the Conan team for doing a great job!
 
 
-## 1.2. The Conan 2.x migration
+## The Conan 2.x migration
 
 Since the release of Conan 2.x there has been a migration guide listing all breaking changes, read [Conan migration guide to 2.0](https://docs.conan.io/1/conan_v2.html), and a lot has changed, because over time lessons are learned on how to improve processes and designs. In this case, the resulting changes were quite impactful, which for us meant a more costly migration due to using different APIs, updating recipes, changing scripts, adopting new behavior, and setting different environment variables.
 
@@ -59,7 +49,7 @@ Here's a list of changes that impacted us most:
 * New python APIs
 
 
-## 1.3. Conan 2.x revisions and hashes
+## Conan 2.x revisions and hashes
 
 The revised revision and hashing model in Conan 2.x paves the way for stronger immutability and reproducibility: any relevant change in the exported recipe inputs or the resulting packaged binary contents deterministically yields a new identifier.
 
@@ -71,7 +61,7 @@ pkg_name/version#rrev:package_id#prev
 
 {{< img src="/img/conan2x-list-revisions.png" alt="Screenshot showing Conan 2.x list revisions output" >}}
 
-### 1.3.1. Recipe Revisions (RREV)
+### Recipe Revisions (RREV)
 
 The Recipe Revision (RREV) is a content hash over every exported recipe file: `conanfile.py`, `conandata.yml`, plus any files included via `exports` / `exports_sources` (patches, helper scripts, license files, etc.). Changing even a newline or whitespace in any exported file produces a new RREV. Files that are not exported (purely local build helpers) do not affect the RREV.
 
@@ -80,7 +70,7 @@ pkg_name/version#rrev
 zstd/1.5.7#f98394e178ac97e2a7b445ea0ce6bcaf
 ```
 
-### 1.3.2. Package ID
+### Package ID
 
 The [package_id](https://docs.conan.io/2/reference/binary_model/package_id.html) uniquely identifies a package *variant* (its configuration intent). Selected settings (e.g. `os=Linux`, `arch=x86_64`), options (e.g. `shared=True`), and the graph of requirements (including their RREVs) are combined to compute its hash. This separates “what we asked to build” from “what was actually built.”
 
@@ -93,7 +83,7 @@ pkg_name/version#rrev:package_id
 zstd/1.5.7#f98394e178ac97e2a7b445ea0ce6bcaf:43c10c705bb0f1d0030e597cb09a05ef5953fed9
 ```
 
-### 1.3.3. Package Revisions (PREV)
+### Package Revisions (PREV)
 
 The Package Revision (PREV) fingerprints a *realized* binary package. Conceptually:
 
@@ -113,7 +103,7 @@ Mental model summary:
 - Package ID: Configuration intent (settings + options + dependency graph signature)
 - PREV: Actual packaged bytes for that configuration
 
-### 1.3.4. Obtaining different revisions in ~~Linux~~ Unix and Windows
+### Obtaining different revisions in ~~Linux~~ Unix and Windows
 
 Now that we know how the new revisions are computed I want to highlight a pitfall I encountered, namely this known issue: [Obtaining different revisions in Linux and Windows](https://docs.conan.io/2/knowledge/faq.html#error-obtaining-different-revisions-in-linux-and-windows).
 
@@ -238,7 +228,7 @@ git rm --cached -r .
 git reset --hard
 ```
 
-## 1.4. Conan Integrations
+## Conan Integrations
 
 The list [Integrations](https://docs.conan.io/2/integrations.html) with Conan is growing, allowing Conan 2.x to support more and more build systems.
 These build systems are supported through the concept "Generators". Generators transform configuration to build system specific output, which can be used for compilation using that tool, such as:
@@ -252,11 +242,11 @@ These build systems are supported through the concept "Generators". Generators t
 
 In the following two sections I'll explain how Integrations work through the types generators that exist.
 
-### 1.4.1. Conan Toolchain generator
+### Conan Toolchain generator
 
 Toolchain generators transform the conan `[settings]`, such that the target build system can consume build settings for compilation. Think about `build_type` being transformed to a Visual Studio configuration or what compiler or cppstd to use. These configurations are outputted in files that can be interpreted by your IDE or build system, helping you as an engineer, by not having to configure all these properties by hand 🚀.
 
-### 1.4.2. Conan Deps generator
+### Conan Deps generator
 
 Deps generators materialize the resolved dependency graph into build-system–specific metadata: include dirs, lib dirs, link flags, defines, frameworks, system libs, and (for multi‑config toolchains) per‑configuration variants. Instead of manually wiring each dependency, a Deps generator emits structured files (e.g. `conandeps.xcconfig`, MSBuild `.props` / `.targets`, or CMake helper files) that your build system or IDE can include so targets inherit the correct transitive usage requirements in order. In short: Toolchain answers “how to compile” (compiler/runtimes/language level); Deps answers “what to consume and link” (headers, libraries, flags) for that graph—removing hand-maintained project drift.
 
@@ -336,11 +326,11 @@ You can solve this by:
 ```
 
 
-## 1.5. Conan APIs
+## Conan APIs
 
 In this section I'll be demonstrating, using a few examples, how to programmatically use some of the conan 2.x APIs available.
 
-### 1.5.1. Loading a conan profile via the ConanAPI
+### Loading a conan profile via the ConanAPI
 
 ```py
 import pprint
@@ -383,7 +373,7 @@ pprint(json.dumps(serialized, indent=4))
 }
 ```
 
-### 1.5.2. Computing the dependency graph via the Conan Graph API
+### Computing the dependency graph via the Conan Graph API
 
 ```py
 import pprint
@@ -558,7 +548,7 @@ pprint(json.dumps(serialized, indent=4))
 }
 ```
 
-## 1.6. Deployers
+## Deployers
 
 [Deployers](https://docs.conan.io/2/reference/extensions/deployers.html) is a new helper utility added in conan 2.x that helps with copying dependencies from the conan local cache to the users workspace directory. This can be helpfull to support local development, resulting in a conan-independant project.
 

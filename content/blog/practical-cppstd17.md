@@ -1,16 +1,11 @@
 +++
 date = "2023-03-06"
-title = "Practical cppstd 17 highlights by example"
+title = "Practical C++17 highlights by example"
+description = "Short C++17 examples: structured bindings, if constexpr, CTAD, std::variant, std::optional, string_view, filesystem and parallel algorithms."
 type = "post"
 categories = ["Development"]
 tags = ["cpp"]
 +++
-
-# Practical cppstd 17 highlights by example
-
--   [Language Features](#language-features)
--   [Library Features](#library-features)
-
 
 ## Language Features
 
@@ -162,6 +157,8 @@ void my_callback(std::string msg, [[maybe_unused]] bool error) {
 ## Library Features
 
 ### std::variant
+
+For getting every alternative of a `std::variant` at compile time, see [std::variant: build an array of all alternatives](/blog/cpp-make-variant-alternatives-array/).
 
 ```cpp
 #include <variant>

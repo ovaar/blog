@@ -1,7 +1,7 @@
 
 services:
   blog:
-    image: ghcr.io/gohugoio/hugo:v0.151.0
+    image: ghcr.io/gohugoio/hugo:v0.170.1
     user: "${UID:-1000}:${GID:-1000}"
     environment:
       - UID=${UID:-1000}
@@ -10,7 +10,7 @@ services:
       - ./:/project
 
   server:
-    image: ghcr.io/gohugoio/hugo:v0.151.0
+    image: ghcr.io/gohugoio/hugo:v0.170.1
     #bind is inside the container, so this still will only have localhost:1313 listen on the host
     command: serve --port 1313 --bind 0.0.0.0 --disableFastRender --noTimes
     volumes:

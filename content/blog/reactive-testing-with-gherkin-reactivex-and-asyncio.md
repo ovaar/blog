@@ -1,6 +1,7 @@
 +++
 date = "2020-09-14"
 title = "Reactive testing with Gherkin, ReactiveX and asyncio"
+description = "Replace time.sleep in async BDD integration tests: assert events with RxPy observables, pytest-bdd Gherkin steps and asyncio, on an MQTT example."
 type = "post"
 categories = ["Development", "Python"]
 tags = ["python"]

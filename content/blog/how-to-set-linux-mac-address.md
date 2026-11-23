@@ -1,10 +1,25 @@
 +++
 date = "2020-07-27"
-title = "How to set Linux MAC address"
+title = "Set a Linux MAC address from EEPROM"
+description = "Read a MAC address from EEPROM with dd and hexdump, format it, and apply it to eth0 at runtime or permanently on an embedded Linux device."
 type = "post"
 categories = ["Development", "Linux"]
 tags = ["linux", "yocto"]
 +++
+
+## The quick answer
+
+To change the MAC address of an interface right now, use `ip` from iproute2. You need to be `root` and the interface has to be down while you change it.
+
+```shell
+sudo ip link set dev eth0 down
+sudo ip link set dev eth0 address 00:01:02:03:04:05
+sudo ip link set dev eth0 up
+```
+
+This does not survive a reboot. That is why the rest of this post exists: on my device the MAC address lives in an EEPROM, so it has to be read and applied on every boot.
+
+## Reading the MAC address from EEPROM
 
 [Last post](/blog/how-to-create-an-interactive-yocto-shell/) I wrote about a embedded device running Linux where a MAC address is stored in the EEPROM. The first six bytes are reserved for the MAC address which (ideally) only should be written once.
 
@@ -12,6 +27,12 @@ To apply the MAC address the numbers need to be hexadecimal formatted and separa
 
 ```shell
 ifconfig eth0 hw ether 00:01:02:03:04:05
+```
+
+The equivalent with `ip link`, which is what current distributions ship (`ifconfig` is deprecated):
+
+```shell
+ip link set dev eth0 address 00:01:02:03:04:05
 ```
 
 Or, you could permanently change the MAC address by setting it into the `hwaddress` in the `/etc/network/interfaces` configuration file.
@@ -32,7 +53,7 @@ MAC=$(dd if=$EEPROM bs=6 count=1 | hexdump -ve '1/1 "%02x'"$DELIMITER"'"')
 echo $MAC # output 00:01:02:03:04:05:
 ```
 
-Finnaly the trailing colon `:` needs to be removed. There are multiple ways to do this
+Finally the trailing colon `:` needs to be removed. There are multiple ways to do this
 
 1. Pipe the output to `sed` and replace the last `:` OR
 2. Use Bash Substring Expansion to remove the character from a string.

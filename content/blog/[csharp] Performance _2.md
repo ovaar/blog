@@ -1,4 +1,9 @@
-[csharp] Performance #2
++++
+date = "2026-11-23"
+title = "C# performance 2: GC pressure and allocation"
+type = "post"
+draft = true
++++
 
 ## GC stressed
 

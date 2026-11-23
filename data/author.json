@@ -1,0 +1,9 @@
+{
+  "name": "Thomas Reynders",
+  "jobTitle": "Customization Lead",
+  "description": "Lead product engineer working on 3D product configurators, CAD on the web and AI-assisted engineering.",
+  "worksFor": { "@type": "Organization", "name": "Elfsquad", "url": "https://www.elfsquad.io" },
+  "address": { "@type": "PostalAddress", "addressLocality": "Leeuwarden", "addressCountry": "NL" },
+  "knowsAbout": ["TypeScript", "React", "Three.js", "React Three Fiber", "glTF", "Autodesk Platform Services", "CPQ", "CAD", "BIM", "C++", "AI agents", "Model Context Protocol"],
+  "sameAs": ["https://www.linkedin.com/in/thomasreynders/", "https://github.com/ovaar"]
+}

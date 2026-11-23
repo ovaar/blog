@@ -1,19 +1,50 @@
-<!DOCTYPE html>
-<html>
-  {{- partial "head.html" . -}}
-  <body>
-    <header>
-      {{- partial "header.html" . -}}
-      <h1>{{ .Title }}</h1>
-      <p>
-        <small>published on {{ .Date.Format "Mon, 02 Jan 2006" }}</small>
-      </p>
-    </header>
-    <hr />
-    <main>
-      {{- partial "tags.html" . -}}
-      <article class="content">{{ .Content | safeHTML }}</article>
-    </main>
-    <footer>{{- partial "footer.html" . -}}</footer>
-  </body>
-</html>
+{{ define "main" }}
+{{- /* Many posts repeat their title as a leading "# Title"; drop it when it matches. */ -}}
+{{- $content := .Content }}
+{{- $lead := findRESubmatch `(?s)^\s*<h1[^>]*>(.*?)</h1>` $content 1 }}
+{{- with $lead }}
+  {{- if eq (index (index . 0) 1 | plainify | htmlUnescape | strings.TrimSpace) $.Title }}
+    {{- $content = replaceRE `(?s)^\s*<h1[^>]*>.*?</h1>` "" $content 1 }}
+  {{- end }}
+{{- end }}
+<div class="progress" aria-hidden="true"><span></span></div>
+<article class="page">
+  <header class="article-head">
+    <nav class="crumbs" aria-label="Breadcrumb"><a href="{{ "" | relURL }}">Home</a><span class="sep">/</span><a href="{{ "blog/" | relURL }}">Blog</a></nav>
+    <p class="eyebrow">{{ partial "labels.html" . }}</p>
+    <h1 class="article-title">{{ .Title }}</h1>
+    {{ with or .Params.description .Params.summary .Params.tagline }}<p class="dek">{{ . }}</p>{{ end }}
+    <dl class="meta">
+      <div><dt>Written by</dt><dd>{{ .Site.Params.FullName | default .Site.Params.Author }}</dd></div>
+      <div><dt>Published</dt><dd><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 2, 2006" }}</time></dd></div>
+      <div><dt>Reading time</dt><dd>{{ .ReadingTime }} min</dd></div>
+      {{ with .Params.tags }}<div><dt>Topics</dt><dd>{{ partial "tags.html" $ }}</dd></div>{{ end }}
+    </dl>
+  </header>
+
+  <div class="article-art">{{ partial "art.html" (dict "page" . "size" "hero") }}</div>
+
+  <div class="article-body">
+    {{- $headings := findRE `<h[123][ >]` $content }}
+    {{- $manualToc := findRE `(?s)^\s*<[uo]l>\s*<li>\s*<a href="#` $content 1 }}
+    {{- if and (ge (len $headings) 3) (not $manualToc) }}
+    <details class="toc" open>
+      <summary>Contents</summary>
+      {{ .TableOfContents }}
+    </details>
+    {{- end }}
+    <div class="prose">{{ $content | safeHTML }}</div>
+  </div>
+
+  <footer class="article-foot article-body">
+    <div>
+      {{ partial "tags.html" . }}
+      {{- $posts := where .Site.RegularPages "Type" "post" }}
+      <nav class="pager" aria-label="More writing">
+        {{ with $posts.Next . }}<a class="prev" href="{{ .RelPermalink }}"><small>← Newer</small><span>{{ .Title }}</span></a>{{ end }}
+        {{ with $posts.Prev . }}<a class="next" href="{{ .RelPermalink }}"><small>Older →</small><span>{{ .Title }}</span></a>{{ end }}
+      </nav>
+    </div>
+  </footer>
+</article>
+{{ end }}

@@ -1,0 +1,5 @@
+{{- /* Inline generative figure: {{< ascii kind="memory" caption="Sequential versus random reads" >}} */ -}}
+<figure class="art-figure">
+  <div class="art" aria-hidden="true"><canvas data-ascii="{{ .Get "kind" | default "field" }}" data-seed="{{ .Page.Title }}{{ .Ordinal }}" data-cell="{{ .Get "cell" | default 11 }}"></canvas><span class="art-label">fig. {{ .Get "kind" | default "field" }}</span></div>
+  {{ with .Get "caption" }}<figcaption>{{ . | markdownify }}</figcaption>{{ end }}
+</figure>

@@ -1,14 +1,13 @@
 +++
 date = "2023-11-17"
-title = "How to call a function of a file in python"
+title = "Run a Python function by name from the command line"
+description = "Call any function in a Python script from the command line with positional or keyword arguments, using globals() and inspect.signature."
 type = "post"
 categories = ["Development"]
 tags = ["python"]
 +++
 
-# How to call a function of a file in python
-
-Take the following use case, where I have a script that I use in my Continues Integration (CI) pipeline and I would like to call a function in that file from the command-line with parameters.
+Take the following use case, where I have a script that I use in my Continuous Integration (CI) pipeline and I would like to call a function in that file from the command-line with parameters. For a more structured alternative with typed options, see [typed command line arguments in Python](/blog/how-to-typed-command-line-arguments-in-python/).
 
 > The [inspect](https://docs.python.org/3/library/inspect.html) module provides several useful functions to help get information about live objects such as modules, classes, methods, functions, tracebacks, frame objects, and code objects. For example, it can help you examine the contents of a class, retrieve the source code of a method, extract and format the argument list for a function, or get all the information you need to display a detailed traceback.
 
@@ -57,3 +56,4 @@ $ python3 myscript.py foo bar=baz
 "foo(bar=baz)"
 ```
 
+Note that `globals()[sys.argv[1]]` lets the caller invoke any name in the module, so only use this for scripts you control, such as CI helpers.

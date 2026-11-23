@@ -1,41 +1,11 @@
 {{ define "main" }}
-  {{ $paginate := .Paginate (where .Site.RegularPages ".Params.type" "=" "post") 5 }}
-  <section class="post-list">
-    <header class="list-header">
-      <h1>Blog Posts</h1>
-      {{ if gt $paginate.PageNumber 1 }}
-        <p>Page {{ $paginate.PageNumber }}</p>
-      {{ end }}
-    </header>
-    <div class="posts">
-      {{ $paginator := .Paginate (sort .Pages "Date" "desc") }}
-      {{ range $paginator.Pages }}
-        <article class="post-item">
-          <a href="{{ .Permalink }}"><h3>{{ .Title }}</h3></a>
-          <p class="summary">
-            {{ if .Params.summary }}
-                {{ .Params.summary }}
-            {{ else }}
-                {{ $content := .Content }}
-                {{ $content := replaceRE `(?s)^(\s*<[uo]l>\s*<li>.*?</[uo]l>)` "" $content 1 }}
-                {{ $content := replaceRE `(?s)^(\s*-\s*\[.*?\]\(#.*?\).*\n)+` "" $content 1 }}
-                {{ $content := replaceRE `(?s)^(\s*\d+\.\s*\[.*?\]\(#.*?\).*\n)+` "" $content 1 }}
-                {{ $content := replaceRE `(?s)<nav.*?</nav>` "" $content }}
-                {{ $content := replaceRE `(?s)<table of contents.*?</table>` "" $content }}
-                {{ $clean := $content | plainify | replaceRE `\s+` " " | strings.TrimPrefix " " }}
-                {{ $trimmedContent := $clean | truncate 300 "..." }}
-                {{ $trimmedContent }}
-            {{ end }}
-          </p>
-          <p class="meta"><small>Published {{ .Date.Format "Mon, 02 Jan 2006" }}</small></p>
-        </article>
-      {{ end }}
-      {{ if gt $paginator.TotalPages 1 }}
-        <nav class="list-nav">
-          {{ if $paginator.HasPrev }}<a href="{{ $paginator.Prev.URL }}">Prev</a>{{ end }}
-          {{ if $paginator.HasNext }}<a href="{{ $paginator.Next.URL }}">Next</a>{{ end }}
-        </nav>
-      {{ end }}
-    </div>
-  </section>
+{{- $posts := where .Site.RegularPages "Type" "post" }}
+<div class="page">
+  <header class="page-head">
+    <p class="eyebrow">Archive<span class="sep">·</span>{{ len $posts }} posts</p>
+    <h1>Blog</h1>
+    <p>{{ .Site.Params.Intro | markdownify }}</p>
+  </header>
+  {{ partial "post-list.html" $posts }}
+</div>
 {{ end }}

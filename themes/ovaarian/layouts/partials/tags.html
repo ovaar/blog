@@ -1,8 +1,7 @@
-<!-- layouts/partials/tags.html -->
- <div class="tags">
-  {{ if .Params.tags }}
-    {{ range .Params.tags }}
-      <a href="{{ "/tags/" | relLangURL }}{{ . | urlize }}" class="tag">#{{ . }}</a>
-    {{ end }}
-  {{ end }}
+{{- with .Params.tags }}
+<div class="tags">
+  {{- range . }}
+  <a class="tag" href="{{ printf "tags/%s/" (. | urlize) | relURL }}">{{ . }}</a>
+  {{- end }}
 </div>
+{{- end }}

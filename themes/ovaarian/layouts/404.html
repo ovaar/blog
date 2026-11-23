@@ -1,16 +1,10 @@
-<!DOCTYPE html>
-<html>
-    {{- partial "head.html" . -}}
-    <body>
-      <header>
-        {{- partial "header.html" . -}}
-      </header>
-      <main>
-        <h1>404 - Page not found</h1>
-        <p>Sorry, the page you were looking for could not be found.</p>
-      </main>
-      <footer>
-        {{- partial "footer.html" . -}}
-      </footer>
-    </body>
-</html>
+{{ define "main" }}
+<div class="page">
+  <header class="page-head">
+    <p class="eyebrow">Error 404</p>
+    <h1>Page not found</h1>
+    <p>The page you were looking for doesn't exist. Try the <a href="{{ "blog/" | relURL }}">archive</a>.</p>
+  </header>
+  <div class="art art--hero" style="margin-top: 48px" aria-hidden="true"><canvas data-ascii="field" data-seed="404" data-cell="13"></canvas></div>
+</div>
+{{ end }}

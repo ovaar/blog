@@ -1,0 +1,8 @@
+<li class="post-row">
+  <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 02, 2006" }}</time>
+  <div>
+    <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+    <p>{{ partial "summary.html" . | truncate 160 "…" }}</p>
+  </div>
+  <p class="label">{{ partial "labels.html" . }}</p>
+</li>

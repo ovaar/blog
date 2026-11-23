@@ -1,0 +1,14 @@
+{{- /* Picks the generative visual for a page from its subject. Front matter `visual` wins. */ -}}
+{{- $terms := slice }}
+{{- range .Params.tags }}{{ $terms = $terms | append (lower .) }}{{ end }}
+{{- range .Params.categories }}{{ $terms = $terms | append (lower .) }}{{ end }}
+{{- $kind := "field" }}
+{{- if intersect $terms (slice "ai" "agents" "conan" "cmake") }}{{ $kind = "graph" }}
+{{- else if intersect $terms (slice "3d" "gltf" "autodesk") }}{{ $kind = "mesh" }}
+{{- else if intersect $terms (slice "perf" "performance" "csharp") }}{{ $kind = "memory" }}
+{{- else if intersect $terms (slice "devops" "azure" "github" "github actions" "ci") }}{{ $kind = "pipeline" }}
+{{- else if intersect $terms (slice "docker" "linux" "yocto" "git") }}{{ $kind = "flow" }}
+{{- else if intersect $terms (slice "cpp" "c++") }}{{ $kind = "cube" }}
+{{- end }}
+{{- with .Params.visual }}{{ $kind = . }}{{ end }}
+{{- return $kind }}

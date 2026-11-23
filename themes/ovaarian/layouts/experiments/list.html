@@ -1,0 +1,29 @@
+{{ define "main" }}
+{{- $pieces := slice
+  (dict "kind" "sphere" "name" "Orbit" "topics" "Homepage" "note" "A sphere lit from the upper left, shaded with an ordered (Bayer) dither so the light falls off in dots rather than gradients. Two tilted orbits pass behind it.")
+  (dict "kind" "pipeline" "name" "Pipeline" "topics" "DevOps · CI" "note" "One job moving through its stages. A stage lights up while it runs and keeps an ok once it has passed; the log line counts the wall-clock time.")
+  (dict "kind" "memory" "name" "Memory access" "topics" "Performance · C#" "note" "The same number of reads, in order on top and at random below. Sequential reads stay inside cache lines that are already loaded; random reads keep missing.")
+  (dict "kind" "cube" "name" "Wireframe" "topics" "C++" "note" "A cube in perspective projection over a dot lattice. Twelve edges, eight vertices, and the vanishing lines it sits on.")
+  (dict "kind" "graph" "name" "Graph" "topics" "Agents · Conan · CMake" "note" "A hub with its dependencies or tools. Messages travel along the edges; for agents that is a tool call, for a package manager a resolved requirement.")
+  (dict "kind" "mesh" "name" "Mesh" "topics" "3D · glTF" "note" "A rotating torus as a quad wireframe, with depth carried by brightness: what every converted model is underneath its materials.")
+  (dict "kind" "flow" "name" "Packets" "topics" "Linux · Docker · Git" "note" "Data moving between two endpoints on parallel lanes, at different rates and in both directions.")
+  (dict "kind" "field" "name" "Noise field" "topics" "Everything else" "note" "Interfering sine waves, dithered into characters. The fallback for posts without a more specific subject.")
+}}
+<div class="page">
+  <header class="page-head">
+    <p class="eyebrow">Generative<span class="sep">·</span>{{ len $pieces }} pieces</p>
+    <h1>{{ .Title }}</h1>
+    {{ with .Content }}<div class="page-lede">{{ . }}</div>{{ end }}
+  </header>
+  <ul class="experiments">
+    {{- range $pieces }}
+    <li>
+      {{ partial "art.html" (dict "kind" .kind "size" "tile" "page" $) }}
+      <p class="label">{{ .topics }}</p>
+      <h2>{{ .name }}</h2>
+      <p>{{ .note }}</p>
+    </li>
+    {{- end }}
+  </ul>
+</div>
+{{ end }}

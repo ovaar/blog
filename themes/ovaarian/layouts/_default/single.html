@@ -1,3 +1,15 @@
 {{ define "main" }}
-  <article class="content">{{ .Content | safeHTML }}</article>
+<article class="page">
+  {{- $content := .Content }}
+  {{- $lead := findRESubmatch `(?s)^\s*<h1[^>]*>(.*?)</h1>` $content 1 }}
+  {{- $title := .Title }}
+  {{- with $lead }}{{ $title = index (index . 0) 1 | plainify | htmlUnescape }}{{ $content = replaceRE `(?s)^\s*<h1[^>]*>.*?</h1>` "" $content 1 }}{{ end }}
+  <header class="page-head">
+    <p class="eyebrow">{{ .Site.Params.FullName | default .Site.Params.Author }}</p>
+    <h1>{{ $title }}</h1>
+  </header>
+  <div class="article-body" style="margin-top: 56px">
+    <div class="prose">{{ $content | safeHTML }}</div>
+  </div>
+</article>
 {{ end }}
