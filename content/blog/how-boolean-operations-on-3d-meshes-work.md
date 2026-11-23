@@ -2,7 +2,6 @@
 date = "2026-11-23"
 title = "How boolean operations on 3D meshes work"
 description = "Union, intersection and difference of 3D solids, explained with interactive figures: the one-line version for distance fields, the four steps a mesh boolean takes, the BSP trick from csg.js, and why floating point makes all of it hard."
-draft = true
 type = "post"
 categories = ["Development"]
 tags = ["3d", "geometry", "csg", "javascript"]
