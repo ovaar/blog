@@ -3,7 +3,6 @@ date = "2026-11-23"
 title = "C++ stack corruption caused by an empty APIENTRY"
 description = "How one empty #define APIENTRY made every OpenGL extension call on 32-bit Windows pop its arguments twice, why the x64 build never showed it, and how to make the bug impossible."
 type = "post"
-draft = true
 categories = ["Development"]
 tags = ["cpp", "opengl", "windows", "debugging"]
 +++
