@@ -482,10 +482,16 @@ code {
   border: 1px solid var(--panel-line);
 }
 .prose pre {
-  font: 400 13.5px/1.7 var(--mono);
+  font: 500 14.5px/1.65 var(--mono);
+  /* light text on a dark panel: keep the OS stem darkening the body turns off */
+  -webkit-font-smoothing: auto;
+  -moz-osx-font-smoothing: auto;
   margin: 0;
   padding: 18px 20px 20px;
   overflow-x: auto;
+  color-scheme: dark;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(237, 237, 234, .28) transparent;
   tab-size: 4;
   background: transparent !important;
   color: var(--panel-ink);

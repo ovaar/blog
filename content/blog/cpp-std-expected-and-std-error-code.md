@@ -123,7 +123,8 @@ std::expected<std::string, std::error_code>
 read_file(const std::filesystem::path& path) {
     std::ifstream file(path, std::ios::binary);
     if (!file.is_open()) {
-        return std::unexpected(std::make_error_code(std::errc::no_such_file_or_directory));
+        return std::unexpected(
+            std::make_error_code(std::errc::no_such_file_or_directory));
     }
 
     std::string content;
