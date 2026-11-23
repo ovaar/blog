@@ -56,7 +56,20 @@
   var toc = document.querySelector('.toc');
   if (toc) {
     var wide = window.matchMedia('(min-width: 1100px)');
-    toc.open = wide.matches;
+    /* The template puts the box after the intro paragraph, which is where it belongs on
+       narrow screens. On wide screens it moves to the left rail of .article-body, so the
+       sticky box sits beside the text instead of on top of it. */
+    var rail = document.querySelector('.article-body');
+    var prose = rail && rail.querySelector('.prose');
+    var home = document.createComment('toc');
+    toc.parentNode.insertBefore(home, toc);
+    var place = function () {
+      if (wide.matches && prose) rail.insertBefore(toc, prose);
+      else home.parentNode.insertBefore(toc, home);
+      toc.open = wide.matches;
+    };
+    place();
+    if (wide.addEventListener) wide.addEventListener('change', place);
     var links = {};
     toc.querySelectorAll('a[href^="#"]').forEach(function (a) {
       links[decodeURIComponent(a.getAttribute('href').slice(1))] = a;

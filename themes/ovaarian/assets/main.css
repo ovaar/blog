@@ -374,10 +374,13 @@ a.tag:hover { color: var(--ink); text-decoration: underline; }
   justify-content: space-between;
   column-gap: 64px;
 }
-.article-body .prose { grid-column: 2; }
+.article-body .prose { grid-column: 2; grid-row: 1; }
 .article-body > :only-child { grid-column: 2; }
 
-.toc { align-self: start; position: sticky; top: 32px; max-height: calc(100vh - 64px); overflow: auto; }
+/* theme.js moves the box into the rail on wide screens. Inside .prose (no JS, or narrow
+   screens) it stays in the text flow and is never sticky. */
+.article-body > .toc { grid-column: 1; grid-row: 1; align-self: start; position: sticky; top: 32px; max-height: calc(100vh - 64px); overflow: auto; }
+.prose .toc { margin: 0 0 40px; }
 .toc summary {
   font: 500 11.5px/1 var(--mono);
   letter-spacing: .14em;
