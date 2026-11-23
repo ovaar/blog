@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html color-mode="user" lang="{{ or .Site.LanguageCode .Site.Language.Lang }}">
+<html color-mode="user" lang="{{ or .Site.Language.Locale .Site.Language.Lang }}">
   {{- partial "head.html" . -}}
   <body>
     <header>{{- partial "header.html" . -}}</header>

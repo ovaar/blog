@@ -1,5 +1,5 @@
 {{ define "main" }}
-  {{ $paginate := .Paginate (where .Site.RegularPages ".Params.type" "=" "post") 5 }}
+  {{ $paginate := .Paginate (where .Site.RegularPages "Type" "eq" "post") 5 }}
   <section class="post-list">
     <header class="list-header">
       <h1>Blog Posts</h1>

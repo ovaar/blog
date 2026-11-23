@@ -23,10 +23,15 @@ enableRobotsTXT = true
 
 [imaging]
     resampleFilter = "box"
-    quality = 75
-    hint = "photo"
     anchor = "smart"
     bgColor = "#ffffff"
+
+[imaging.jpeg]
+    quality = 75
+
+[imaging.webp]
+    quality = 75
+    hint = "photo"
 
 [imaging.exif]
     includeFields = ""
