@@ -305,7 +305,7 @@ a:hover { text-decoration-color: currentColor; }
   position: relative; z-index: 1;
 }
 .tag::before { content: '#'; color: var(--mute); }
-.tag:hover { color: var(--ink); text-decoration: underline; }
+a.tag:hover { color: var(--ink); text-decoration: underline; }
 .topic-cloud { gap: 10px 24px; }
 .topic-cloud .tag { font-size: 14px; }
 .topic-cloud sup { font-size: 10px; margin-left: 3px; color: var(--mute); }
@@ -558,6 +558,12 @@ code {
 
 .article-foot { border-top: 1px solid var(--rule); padding-top: 28px; margin-top: 16px; }
 .article-foot .tags { margin-bottom: 40px; }
+.related { margin-bottom: 40px; }
+.related h2 { font: 400 11.5px/1 var(--mono); letter-spacing: .14em; text-transform: uppercase; color: var(--mute); margin: 0 0 14px; }
+.related ul { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.related li { border-bottom: 1px solid var(--line); }
+.related a { display: block; padding: 14px 0; font: 400 21px/1.25 var(--serif); letter-spacing: -.01em; text-decoration: none; }
+.related a:hover { text-decoration: underline; text-decoration-thickness: 1px; }
 .pager {
   display: grid;
   grid-template-columns: 1fr 1fr;

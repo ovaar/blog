@@ -1,7 +1,13 @@
+{{- /* Tag chips. Only tags with 3+ posts have an indexable page, so only those are links. */ -}}
 {{- with .Params.tags }}
 <div class="tags">
   {{- range . }}
-  <a class="tag" href="{{ printf "tags/%s/" (. | urlize) | relURL }}">{{ . }}</a>
+  {{- $term := site.GetPage (printf "/tags/%s" (. | urlize)) }}
+  {{- if and $term (ge (len $term.Pages) 3) }}
+  <a class="tag" href="{{ $term.RelPermalink }}">{{ . }}</a>
+  {{- else }}
+  <span class="tag">{{ . }}</span>
+  {{- end }}
   {{- end }}
 </div>
 {{- end }}

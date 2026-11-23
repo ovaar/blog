@@ -35,7 +35,8 @@
       <a class="arrow-link" href="{{ "tags/" | relURL }}">All topics<span aria-hidden="true">→</span></a>
     </div>
     <div class="tags topic-cloud">
-      {{- range .Site.Taxonomies.tags.ByCount }}
+      {{- /* Only topics with an indexable page (3+ posts); "All topics" lists the rest. */}}
+      {{- range where .Site.Taxonomies.tags.ByCount "Count" "ge" 3 }}
       <a class="tag" href="{{ .Page.RelPermalink }}">{{ .Term }}<sup>{{ .Count }}</sup></a>
       {{- end }}
     </div>
