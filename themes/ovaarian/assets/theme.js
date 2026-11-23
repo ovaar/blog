@@ -101,6 +101,7 @@
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.textContent = 'Copy';
+      btn.setAttribute('aria-label', 'Copy ' + (lang || 'code') + ' to clipboard');
       btn.addEventListener('click', function () {
         navigator.clipboard.writeText(code.innerText).then(function () {
           btn.textContent = 'Copied';

@@ -1,5 +1,7 @@
 +++
 date = "2024-08-01"
+# PR #2 only changed metadata and formatting; keep the last real edit.
+lastmod = "2025-12-17T21:29:43+01:00"
 title = "Cross-platform Bash scripts in Azure Pipelines"
 description = "One Bash script for Windows, macOS and Linux Azure Pipelines agents: setting up Git for Windows bash and making a failing Bash step fail the job."
 type = "post"

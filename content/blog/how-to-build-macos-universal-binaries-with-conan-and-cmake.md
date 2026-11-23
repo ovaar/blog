@@ -1,5 +1,7 @@
 +++
 date = "2022-11-25"
+# PR #2 only changed metadata and formatting; keep the last real edit.
+lastmod = "2025-10-08T10:52:18+02:00"
 title = "Build macOS Universal Binaries with Conan and CMake"
 description = "Build x86_64 and arm64 macOS Universal Binaries with Conan and CMake: CMakeToolchain, Autotools, Boost, lipo and automated recipe patching."
 type = "post"

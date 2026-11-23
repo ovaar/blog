@@ -1,0 +1,14 @@
+# {{ site.Params.Author }}
+
+> {{ site.Params.Description }} Written by {{ site.Params.FullName }}, a software engineer in Leeuwarden (NL).
+
+All writing is licensed CC BY-NC 4.0. Full post text is also in the RSS feed: {{ "index.xml" | absURL }}
+
+## About
+
+- [About {{ site.Params.FullName }}]({{ "about/" | absURL }}): background, current work and links
+
+## Posts
+{{ range where site.RegularPages "Type" "post" }}
+- [{{ .Title }}]({{ .Permalink }}): {{ or .Params.description (.Summary | plainify | htmlUnescape | truncate 155) }}
+{{- end }}

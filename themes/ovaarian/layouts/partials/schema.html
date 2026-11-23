@@ -12,7 +12,7 @@
   {{- $graph = $graph | append (dict "@type" "ProfilePage" "@id" .Permalink "url" .Permalink "name" .Title "isPartOf" (dict "@id" $websiteID) "mainEntity" (dict "@id" $personID)) $person }}
 {{- else if and .IsPage (eq .Type "post") }}
   {{- $desc := or .Params.description (.Summary | plainify | htmlUnescape | strings.TrimSpace | truncate 155) }}
-  {{- $post := dict "@type" "BlogPosting" "@id" (printf "%s#article" .Permalink) "headline" .Title "description" $desc "url" .Permalink "mainEntityOfPage" .Permalink "datePublished" (.Date.Format "2006-01-02T15:04:05Z07:00") "dateModified" (.Lastmod.Format "2006-01-02T15:04:05Z07:00") "inLanguage" site.Language.Lang "wordCount" .WordCount "author" (dict "@type" "Person" "@id" $personID "name" $a.name "url" (absURL "about/")) "publisher" (dict "@id" $personID) "isPartOf" (dict "@id" $websiteID) "image" (absURL (or .Params.image site.Params.ogImage)) }}
+  {{- $post := dict "@type" "BlogPosting" "@id" (printf "%s#article" .Permalink) "headline" .Title "description" $desc "url" .Permalink "mainEntityOfPage" .Permalink "datePublished" (.Date.Format "2006-01-02T15:04:05Z07:00") "dateModified" (.Lastmod.Format "2006-01-02T15:04:05Z07:00") "inLanguage" site.Language.Lang "wordCount" .WordCount "author" (dict "@type" "Person" "@id" $personID "name" $a.name "url" (absURL "about/")) "publisher" (dict "@id" $personID) "isPartOf" (dict "@id" $websiteID) "license" "https://creativecommons.org/licenses/by-nc/4.0/" "image" (absURL (or .Params.image site.Params.ogImage)) }}
   {{- with .Params.tags }}{{ $post = merge $post (dict "keywords" (delimit . ", ")) }}{{ end }}
   {{- $crumbs := dict "@type" "BreadcrumbList" "itemListElement" (slice
       (dict "@type" "ListItem" "position" 1 "name" "Home" "item" $home)

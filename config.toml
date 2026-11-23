@@ -1,12 +1,37 @@
 baseURL = "https://ovaar.github.io/"
 title = "Ovaar - Software engineering blog"
-copyright = "2020 Ovaar. This work is licensed under a Creative Commons Attribution-NonCommercial 4.0 International License."
+copyright = "© 2020–2026 Thomas Reynders. Licensed under CC BY-NC 4.0: https://creativecommons.org/licenses/by-nc/4.0/"
 theme = "ovaarian"
 
 enableEmoji=true
 enableRobotsTXT = true
 # Lastmod (sitemap, dateModified) comes from the last git commit touching the file.
 enableGitInfo = true
+[frontmatter]
+  # A lastmod in front matter wins over git, for edits that were only metadata.
+  lastmod = ["lastmod", ":git", ":default"]
+
+# Related posts at the end of each post: shared tags count most.
+[related]
+  includeNewer = true
+  threshold = 50
+  toLower = true
+  [[related.indices]]
+    name = "tags"
+    weight = 100
+  [[related.indices]]
+    name = "categories"
+    weight = 60
+
+# /llms.txt is generated from the posts, so it can't drift from what is published.
+[outputFormats.llms]
+  mediaType = "text/plain"
+  baseName = "llms"
+  isPlainText = true
+  notAlternative = true
+
+[outputs]
+  home = ["HTML", "RSS", "llms"]
 
 [taxonomies]
    tag = "tags"
@@ -25,7 +50,7 @@ enableGitInfo = true
     FullName = "Thomas Reynders"
     Headline = "Notes on building software."
     Motto = "Build. Measure. Improve."
-    Intro = "Software engineer from Leeuwarden. I write about 3D on the web, C++ and Python tooling, CI pipelines, and working alongside coding agents. More [about me](/about/)."
+    Intro = "Software engineer from Leeuwarden. I write about C++ and Python tooling, CI pipelines, working alongside coding agents, and 3D on the web. More [about me](/about/)."
 
 [permalinks]
     posts = "/:year/:month/:title/"

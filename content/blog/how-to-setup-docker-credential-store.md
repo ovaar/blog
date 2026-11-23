@@ -24,11 +24,15 @@ The steps below set up `docker-credential-pass` on Ubuntu, with `pass` as the st
 
 ## 1. Install the helper
 
-The following one-liner downloads the latest `docker-credential-pass` release from GitHub and extracts it to `~/bin`:
+The releases of docker-credential-helpers ship plain binaries, not archives. Download the one for your platform to `~/bin` and make it executable (v0.9.13 is the latest at the time of writing):
 
 ```shell
-curl -fsSLI -o /dev/null -w %{url_effective} https://api.github.com/repos/docker/docker-credential-helpers/releases/latest | xargs curl -s | grep -o "https.*docker-credential-pass.*tar.gz" | wget -qi - && mkdir -p ~/bin && tar -xvf docker-credential-pass-v*-amd64.tar.gz -C ~/bin
+mkdir -p ~/bin
+curl -fsSL -o ~/bin/docker-credential-pass https://github.com/docker/docker-credential-helpers/releases/download/v0.9.13/docker-credential-pass-v0.9.13.linux-amd64
+chmod +x ~/bin/docker-credential-pass
 ```
+
+On an arm64 machine, use the `docker-credential-pass-v0.9.13.linux-arm64` asset instead.
 
 Docker looks the helper up on your `PATH`, so make sure `~/bin` is on it:
 
@@ -51,13 +55,15 @@ Copy the key ID from the output of `--list-secret-keys` and use it in `pass init
 
 ## 3. Tell Docker to use the helper
 
-Add `"credsStore": "pass"` to `~/.docker/config.json`. This inserts it after the first `{`:
+Add `"credsStore": "pass"` to `~/.docker/config.json` with `jq`, so the file stays valid JSON and existing keys such as `auths` are kept. Create the file with `{}` first if it does not exist:
 
 ```shell
-sed -i '0,/{/s/{/{\n\t"credsStore": "pass",/' ~/.docker/config.json
+mkdir -p ~/.docker
+[ -f ~/.docker/config.json ] || echo '{}' > ~/.docker/config.json
+jq '. + {"credsStore": "pass"}' ~/.docker/config.json > ~/.docker/config.json.tmp && mv ~/.docker/config.json.tmp ~/.docker/config.json
 ```
 
-The `sed` command needs the file to exist. If you have never used Docker on this machine, create it first with `{}` as its content.
+It is safe to run twice: the key is set, not duplicated. Install `jq` with `sudo apt-get install -y jq` if you do not have it.
 
 ## 4. Log in
 

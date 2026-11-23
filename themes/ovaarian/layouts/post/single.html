@@ -15,7 +15,7 @@
     <h1 class="article-title">{{ .Title }}</h1>
     {{ with or .Params.description .Params.summary .Params.tagline }}<p class="dek">{{ . }}</p>{{ end }}
     <dl class="meta">
-      <div><dt>Written by</dt><dd>{{ .Site.Params.FullName | default .Site.Params.Author }}</dd></div>
+      <div><dt>Written by</dt><dd><a href="{{ "about/" | relURL }}" rel="author">{{ .Site.Params.FullName | default .Site.Params.Author }}</a></dd></div>
       <div><dt>Published</dt><dd><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format "Jan 2, 2006" }}</time></dd></div>
       <div><dt>Reading time</dt><dd>{{ .ReadingTime }} min</dd></div>
       {{ with .Params.tags }}<div><dt>Topics</dt><dd>{{ partial "tags.html" $ }}</dd></div>{{ end }}
@@ -27,11 +27,14 @@
   <div class="article-body">
     {{- $headings := findRE `<h[123][ >]` $content }}
     {{- $manualToc := findRE `(?s)^\s*<[uo]l>\s*<li>\s*<a href="#` $content 1 }}
+    {{- /* Contents box goes after the intro paragraph, so the post opens with its point. */}}
     {{- if and (ge (len $headings) 3) (not $manualToc) }}
-    <details class="toc" open>
-      <summary>Contents</summary>
-      {{ .TableOfContents }}
-    </details>
+      {{- $toc := printf `<details class="toc" open><summary>Contents</summary>%s</details>` (replace .TableOfContents `<nav id="TableOfContents">` `<nav id="TableOfContents" aria-label="Contents">`) }}
+      {{- if findRE `(?s)^\s*<p>.*?</p>` $content 1 }}
+        {{- $content = replaceRE `(?s)^(\s*<p>.*?</p>)` (printf "${1}%s" $toc) $content 1 }}
+      {{- else }}
+        {{- $content = printf "%s%s" $toc $content }}
+      {{- end }}
     {{- end }}
     <div class="prose">{{ $content | safeHTML }}</div>
   </div>
@@ -39,6 +42,16 @@
   <footer class="article-foot article-body">
     <div>
       {{ partial "tags.html" . }}
+      {{- with first 3 (where (.Site.RegularPages.Related .) "Type" "post") }}
+      <nav class="related" aria-label="Related posts">
+        <h2>Related posts</h2>
+        <ul>
+          {{- range . }}
+          <li><a href="{{ .RelPermalink }}">{{ .Title }}</a></li>
+          {{- end }}
+        </ul>
+      </nav>
+      {{- end }}
       {{- $posts := where .Site.RegularPages "Type" "post" }}
       <nav class="pager" aria-label="More writing">
         {{ with $posts.Next . }}<a class="prev" href="{{ .RelPermalink }}"><small>← Newer</small><span>{{ .Title }}</span></a>{{ end }}

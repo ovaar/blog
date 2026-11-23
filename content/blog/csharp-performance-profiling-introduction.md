@@ -1,5 +1,7 @@
 +++
 date = "2020-10-14"
+# PR #2 only changed metadata and formatting; keep the last real edit.
+lastmod = "2025-10-08T10:52:18+02:00"
 title = "C# Performance - Profiling introduction"
 description = "Profiling a C# WPF inspection app: hotspots, memory allocation, microarchitecture and threading efficiency with VTune, dotTrace and Visual Studio."
 type = "post"

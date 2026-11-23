@@ -1,7 +1,7 @@
 +++
 date = "2025-01-31"
-title = "GitHub Actions: deploy Hugo to a Pages submodule"
-description = "Fix 403 errors when a GitHub Actions workflow pushes a Hugo build to a GitHub Pages submodule: a fine-grained token, submodule checkout and the push."
+title = "GitHub Actions: push to a repo with a deploy key"
+description = "Fix the 403 when a GitHub Actions workflow pushes a Hugo build to another repository: use an SSH deploy key, clone the repo fresh and push HEAD:master."
 type = "post"
 categories = ["DevOps", "GitHub Actions", "Docker"]
 tags = ["github", "devops", "docker", "git"]
@@ -14,92 +14,107 @@ remote: Permission to <owner>/<repo>.git denied to github-actions[bot].
 fatal: unable to access 'https://github.com/<owner>/<repo>.git/': The requested URL returned error: 403
 ```
 
-The built-in `GITHUB_TOKEN` is only valid for the repository the workflow runs in. This blog keeps its generated site in a separate GitHub Pages repository, mounted as the `public` submodule, so pushing there needs a token that has access to that repository. The fix has three parts: a personal access token, a checkout that uses it, and a push from inside the submodule.
+The built-in `GITHUB_TOKEN` is only valid for the repository the workflow runs in. This blog publishes its generated site to a separate GitHub Pages repository, so the push needs a credential for that repository. The fix is an SSH deploy key with write access to it.
 
-## 1. Create a personal access token
+## Why a deploy key
 
-1. Go to GitHub Settings, Developer settings, Personal access tokens, Fine-grained tokens, and generate a new token.
-2. Set an expiry date.
-3. Under repository access, select only the repository you push to (the Pages repository).
-4. Under permissions, set Contents to Read and write.
-5. Copy the token.
+A personal access token works too, but a deploy key is a better fit here:
 
-Then store it as a repository secret in the repository that runs the workflow: Settings, Secrets and variables, Actions, New repository secret. The workflow below expects the name `GH_PAT`.
+- It is scoped to one repository, so it cannot grant access to anything else.
+- It does not expire, so there is no reminder to renew it.
 
-The token stops working on its expiry date. Put a reminder in your calendar to create a new one and update the secret.
+## 1. Create the key and store it
 
-## 2. Check out with the token and configure the submodule
+Generate a key pair without a passphrase, register the public half as a deploy key with write access on the site repository, and store the private half as an Actions secret in the repository that runs the workflow:
 
-Pass the token to `actions/checkout` so the submodules are cloned with it. Then rewrite GitHub URLs to include the token and set a commit identity inside the `public` submodule:
+```shell
+ssh-keygen -t ed25519 -N "" -f deploy_key
+gh repo deploy-key add deploy_key.pub -R <owner>/<site-repo> --allow-write
+gh secret set PAGES_DEPLOY_KEY -R <owner>/<source-repo> < deploy_key
+rm deploy_key deploy_key.pub
+```
+
+`gh secret set` sends the value to GitHub, which stores it encrypted. It is not kept locally, so after the last line the private key exists only as the secret.
+
+## 2. Clone the site repository fresh
+
+The blog repository still lists the site repository as the `public` submodule, but the workflow does not use it. It checks out the source with `submodules: false`:
 
 ```yaml
-name: Deploy Blog
-
-on:
-  push:
-    branches:
-      - master
-  workflow_dispatch:
-
-jobs:
-  deploy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout repository
+      - name: Checkout blog source
         uses: actions/checkout@v7
         with:
-          submodules: recursive
-          fetch-depth: 0
-          token: ${{ secrets.GH_PAT }}
-          persist-credentials: true
-
-      - name: Configure git credentials for submodule
-        run: |
-          git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
-          cd public
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          fetch-depth: 0 # full history: enableGitInfo reads lastmod from git
+          submodules: false # the site repo is cloned fresh below, not from the pinned submodule
 ```
 
-The `url.insteadOf` setting makes every `https://github.com/` URL carry the token, including the submodule's remote from `.gitmodules`, so the later `git push` from `public` is authenticated.
+A fresh clone is needed because of how a submodule is checked out:
 
-## 3. Build and push from the submodule
+- A submodule checkout is a detached HEAD at the pinned commit, so there is no local `master` branch to push.
+- The pin goes stale. Once the site repository has moved past the pinned commit, a push from it is rejected as non-fast-forward.
 
-Run the Hugo build through `docker compose`, then commit and push from inside `public`:
+Then the workflow writes the key from the secret, trusts the GitHub host key and clones the site repository into `public`:
 
 ```yaml
-      - name: Get UID and GID
-        run: |
-          echo "UID=$(id -u)" >> $GITHUB_ENV
-          echo "GID=$(id -g)" >> $GITHUB_ENV
-
-      - name: Prepare Hugo cache directory
-        run: mkdir -p "${{ runner.temp }}/hugo_cache"
-
-      - name: Run docker compose
-        run: |
-          docker compose run --rm \
-            -v "${{ runner.temp }}/hugo_cache:/cache" \
-            blog \
-              --gc \
-              --minify \
-              --noTimes
-
-          cd public
-          git add .
-          git commit -m "Deploy site $(date)" || echo "No changes to commit"
-          git push origin master
+      - name: Clone the site repository
         env:
-          HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
-          HUGO_ENVIRONMENT: production
+          DEPLOY_KEY: ${{ secrets.PAGES_DEPLOY_KEY }}
+        run: |
+          mkdir -p ~/.ssh
+          printf '%s\n' "$DEPLOY_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -t ed25519 github.com >> ~/.ssh/known_hosts
+          echo "GIT_SSH_COMMAND=ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes" >> "$GITHUB_ENV"
+          rm -rf public
+          GIT_SSH_COMMAND="ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes" \
+            git clone --depth 1 --branch master git@github.com:ovaar/ovaar.github.io.git public
+          # Start from an empty tree so pages that no longer exist are removed from the site.
+          find public -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
 ```
 
-The UID and GID are exported so the container user matches the runner user and can write to the mounted directories. The `|| echo` after `git commit` keeps the step green when nothing changed.
+Emptying the clone (except `.git`) means pages that no longer exist are removed from the site on the next deploy.
+
+## 3. Build into the clone
+
+Hugo runs in Docker and writes into `public`. It runs as the runner user so it can write into the checkout and git can read the result:
+
+```yaml
+      - name: Build with Hugo
+        run: |
+          mkdir -p "${{ runner.temp }}/hugo_cache"
+          # Run Hugo as the runner user so it can write into the checkout and git can read it.
+          docker compose run --rm --user "$(id -u):$(id -g)" \
+            -e HUGO_ENVIRONMENT=production \
+            -e HUGO_CACHEDIR=/cache \
+            -v "${{ runner.temp }}/hugo_cache:/cache" \
+            blog --gc --minify --noTimes
+          test -f public/index.html
+```
+
+The `test -f public/index.html` line fails the step if the build produced nothing, so an empty site is not pushed.
+
+## 4. Commit and push HEAD:master
+
+```yaml
+      - name: Publish to ovaar.github.io
+        working-directory: public
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add --all
+          if git diff --cached --quiet; then
+            echo "Site unchanged, nothing to publish."
+            exit 0
+          fi
+          git commit -m "Deploy ${GITHUB_SHA::7}: $(git -C .. log -1 --format=%s)"
+          git push origin HEAD:master
+```
+
+`git push origin HEAD:master` pushes whatever the clone has checked out to `master`, so it does not depend on a local branch name. The workflow also sets `concurrency` with `cancel-in-progress: false`, so a newer push waits for the running deploy instead of racing it.
 
 ## Summary
 
-- `GITHUB_TOKEN` cannot push to another repository, so use a fine-grained personal access token limited to the target repository, with Contents read and write and an expiry date, stored as a repository secret.
-- Pass it to `actions/checkout` with `token:` and `submodules: recursive`.
-- Rewrite `https://github.com/` URLs with `url.insteadOf` and set the git identity inside the submodule.
-- Build with `docker compose run`, then commit and push from `public`.
+- `GITHUB_TOKEN` cannot push to another repository.
+- Create an SSH key, add the public key as a write-enabled deploy key on the site repository and the private key as the `PAGES_DEPLOY_KEY` secret in the source repository.
+- Check out the source with `submodules: false` and clone the site repository fresh with the key.
+- Build with Hugo into the clone, commit, and `git push origin HEAD:master`.

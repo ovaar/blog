@@ -11,11 +11,15 @@
   {{- if and (not $desc) (eq .Kind "taxonomy") }}{{ $desc = printf "All %s used on the Ovaar software engineering blog by Thomas Reynders." .Data.Plural }}{{ end }}
   {{- $desc = or $desc .Site.Params.Description }}
   {{- $title := cond .IsHome .Site.Title .Title }}
+  {{- /* A tag and a category can share a name; keep their titles apart. */}}
+  {{- if eq .Kind "term" }}{{ $title = cond (eq .Data.Plural "tags") (printf "Posts tagged %s" .Title) (printf "%s category" .Title) }}{{ end }}
   {{- $image := absURL (or .Params.image .Site.Params.ogImage) }}
   {{- $isPost := and .IsPage (eq .Type "post") }}
   <meta name="description" content="{{ $desc }}" />
-  <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} · {{ .Site.Params.Author }}{{ end }}</title>
+  <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ $title }} · {{ .Site.Params.Author }}{{ end }}</title>
   <link rel="canonical" href="{{ .Permalink }}" />
+  <link rel="license" href="https://creativecommons.org/licenses/by-nc/4.0/" />
+  <link rel="icon" href="{{ "favicon.ico" | relURL }}" sizes="any" />
   <meta property="og:site_name" content="{{ .Site.Params.Author }}" />
   <meta property="og:title" content="{{ $title }}" />
   <meta property="og:description" content="{{ $desc }}" />
