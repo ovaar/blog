@@ -26,7 +26,7 @@ Next to the engineering I coach my colleagues, and I set up how we run client pr
 
 ## Why this blog
 
-I'm dyslexic, and writing things down is how I make sure I understand them. Most posts here started as notes for a colleague.
+Writing things down is how I make sure I understand them. Most posts here started as notes for a colleague.
 
 ## Elsewhere
 
