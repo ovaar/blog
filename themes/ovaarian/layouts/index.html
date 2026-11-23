@@ -3,7 +3,7 @@
 <div class="page">
   <section class="hero" aria-labelledby="hero-title">
     <div class="hero__text">
-      <p class="eyebrow">{{ with .Site.Params.FullName }}{{ . }}<span class="sep">·</span>{{ end }}{{ .Site.Params.Description }}</p>
+      <p class="eyebrow">{{ with .Site.Params.FullName }}{{ . }}<span class="sep">·</span>{{ end }}{{ .Site.Params.Tagline | default .Site.Params.Description }}</p>
       <h1 id="hero-title">{{ .Site.Params.Headline | default .Site.Title }}</h1>
       {{ with .Site.Params.Intro }}<p class="hero__lede">{{ . | markdownify }}</p>{{ end }}
       <a class="button" href="{{ "blog/" | relURL }}">Explore the blog <span aria-hidden="true">→</span></a>
