@@ -1,5 +1,7 @@
 +++
 date = "2022-02-22"
+# PR #2 only changed metadata and formatting; keep the last real edit.
+lastmod = "2025-10-08T10:52:18+02:00"
 title = "How I finally finished my DIY smart mirror"
 description = "Building a smart mirror from scratch: wooden frame, spy-mirror film, a Vue.js dashboard, mounting, a bill of materials and what I'd do differently."
 type = "post"

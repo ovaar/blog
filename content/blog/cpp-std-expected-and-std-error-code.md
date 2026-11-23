@@ -1,7 +1,7 @@
 +++
 date = "2025-12-17"
 title = "Why std::expected matters for error handling"
-description = "How C++23 std::expected and std::error_code work together: custom error categories, monadic chaining, and why categories must live in a .cpp file."
+description = "How C++23 std::expected and std::error_code work together: custom error categories, monadic chaining, and why an error category must be a single object per program."
 type = "post"
 categories = ["Development"]
 tags = ["cpp"]
@@ -66,6 +66,8 @@ Here's the classic pattern—error code as return value, actual data as output p
 ```cpp
 #include <fstream>
 #include <filesystem>
+#include <iostream>
+#include <string>
 #include <system_error>
 
 std::string read_file(const std::filesystem::path& path, std::error_code& ec) {
@@ -157,6 +159,10 @@ Here's a real implementation for HTTP status codes:
 
 ```cpp
 // @file http_response_code.h
+#pragma once
+
+#include <system_error>
+#include <type_traits>
 
 namespace network {
     enum class http_response_code {
@@ -181,31 +187,35 @@ namespace network {
     };
 
     const std::error_category& http_error_category() noexcept;
+
+    // Found through argument-dependent lookup, so they must live in the enums' namespace
+    inline std::error_code make_error_code(http_response_code code) noexcept {
+        return {static_cast<int>(code), http_error_category()};
+    }
+
+    inline std::error_condition make_error_condition(http_error_condition cond) noexcept {
+        return {static_cast<int>(cond), http_error_category()};
+    }
 }
 
 // Register with the type system
 namespace std {
     template <>
     struct is_error_code_enum<network::http_response_code> : std::true_type {};
-    
+
     template <>
     struct is_error_condition_enum<network::http_error_condition> : std::true_type {};
-
-    inline std::error_code make_error_code(network::http_response_code code) noexcept {
-        return {static_cast<int>(code), network::http_error_category()};
-    }
-
-    inline std::error_condition make_error_condition(network::http_error_condition cond) noexcept {
-        return {static_cast<int>(cond), network::http_error_category()};
-    }
 }
 ```
 
 ```cpp
 // @file http_response_code.cpp
+#include "http_response_code.h"
+
+#include <string>
 
 namespace network {
-    class http_error_category final : public std::error_category {
+    class http_error_category_impl final : public std::error_category {
     public:
         [[nodiscard]] const char* name() const noexcept override {
             return "http";
@@ -226,11 +236,11 @@ namespace network {
         std::error_condition default_error_condition(int ev) const noexcept override {
             const auto code = static_cast<http_response_code>(ev);
             if (code >= http_response_code::OK && code < http_response_code(300))
-                return std::make_error_condition(http_error_condition::SUCCESS);
+                return make_error_condition(http_error_condition::SUCCESS);
             if (code >= http_response_code(400) && code < http_response_code(500))
-                return std::make_error_condition(http_error_condition::CLIENT_ERROR);
+                return make_error_condition(http_error_condition::CLIENT_ERROR);
             if (code >= http_response_code(500))
-                return std::make_error_condition(http_error_condition::SERVER_ERROR);
+                return make_error_condition(http_error_condition::SERVER_ERROR);
             
             return std::error_condition(ev, *this);
         }
@@ -246,7 +256,7 @@ namespace network {
     };
 
     const std::error_category& http_error_category() noexcept {
-        static http_error_category instance;
+        static http_error_category_impl instance;
         return instance;
     }
 }
@@ -255,13 +265,15 @@ namespace network {
 Now you can use it elegantly:
 
 ```cpp
+using namespace network;
+
 class http_response {
 public:
     std::error_code code{};
     std::string     body{};
 
     [[nodiscard]] bool success() const noexcept {
-        return code == std::make_error_condition(http_error_condition::SUCCESS);
+        return code == make_error_condition(http_error_condition::SUCCESS);
     }
 };
 
@@ -373,9 +385,9 @@ If you're converting an existing codebase:
 2. Gradually convert internal functions to return `std::expected` directly
 3. Keep error categories consistent across old and new code
 
-### A critical gotcha: define error categories in a .cpp file, not a header
+### A gotcha: one error category object per program
 
-This is important and non-obvious: **error category definitions must be in a compiled translation unit (`.cpp` file), not header-only.** If you define your category in a header that gets included in multiple translation units, error comparisons will break.
+This is important and non-obvious: **an error category must be a single object for the whole program.** If each translation unit ends up with its own copy, error comparisons break.
 
 Why? The standard library's `error_category` equality comparison uses pointer identity, not value comparison:
 
@@ -386,21 +398,25 @@ bool operator==(const error_category& rhs) const noexcept {
 }
 ```
 
-If your category is defined in a header, each translation unit gets its own instance. The pointers differ, so comparisons fail—even though they represent the same category.
+If every translation unit has its own category object, the pointers differ, so comparisons fail, even though the objects represent the same category. That happens when the object has internal linkage, for example a `static` or anonymous-namespace instance defined in a header: each `.cpp` file that includes the header gets its own copy.
 
-**The fix:** Always define your category instance in a `.cpp` file and return it by reference:
+Being header-only is not the problem by itself. An `inline` function with a function-local static, or a C++17 `inline` variable, has one definition program-wide, so a category defined that way in a header is fine.
+
+**The safest fix:** define the category instance in one `.cpp` file and hand it out by reference:
 
 ```cpp
 // http_response_code.cpp - NOT in the header!
 namespace network {
-    class http_error_category final : public std::error_category { /* ... */ };
-    
+    class http_error_category_impl final : public std::error_category { /* ... */ };
+
     const std::error_category& http_error_category() noexcept {
-        static http_error_category instance;  // Single instance
+        static http_error_category_impl instance;  // Single instance
         return instance;
     }
 }
 ```
+
+Note that the class and the function need different names. If both are called `http_error_category`, the function hides the class in that namespace and `static http_error_category instance;` does not compile.
 
 Then in your header, only declare the function:
 
@@ -411,10 +427,24 @@ namespace network {
 }
 ```
 
-This ensures every translation unit uses the same category instance, making pointer comparisons work correctly. This requirement ties error categories to compiled libraries—you can't easily use them in header-only libraries without workarounds.
+If you do want a header-only category, define the class in the header and make the accessor `inline`:
+
+```cpp
+// http_response_code.h
+namespace network {
+    class http_error_category_impl final : public std::error_category { /* ... */ };
+
+    inline const std::error_category& http_error_category() noexcept {
+        static http_error_category_impl instance;
+        return instance;
+    }
+}
+```
+
+This gives every translation unit the same category instance, so the pointer comparisons work. One caveat remains across shared-library boundaries: if the header is compiled into two shared libraries (for example with hidden symbol visibility, or when you link it statically into two DSOs), each library can still end up with its own instance. Defining the category in one `.cpp` file in one library avoids that.
 
 ## Conclusion
 
 The combination of `std::expected` and `std::error_code` gives you the best of both worlds: type-safe APIs with rich, standardized error information. `std::error_condition` adds semantic weight by letting you classify errors generically (like HTTP's client vs server errors) without checking individual codes.
 
-It's the current C++ way to handle errors without exceptions—just watch out for that category definition gotcha.
+It's the current C++ way to handle errors without exceptions—just make sure each error category is a single object per program.

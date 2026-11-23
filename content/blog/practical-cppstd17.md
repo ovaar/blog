@@ -1,5 +1,7 @@
 +++
 date = "2023-03-06"
+# PR #2 only changed metadata and formatting; keep the last real edit.
+lastmod = "2025-10-08T10:52:18+02:00"
 title = "Practical C++17 highlights by example"
 description = "Short C++17 examples: structured bindings, if constexpr, CTAD, std::variant, std::optional, string_view, filesystem and parallel algorithms."
 type = "post"

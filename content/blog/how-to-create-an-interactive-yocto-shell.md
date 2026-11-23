@@ -1,5 +1,7 @@
 +++
 date = "2020-07-20"
+# PR #2 only changed metadata and formatting; keep the last real edit.
+lastmod = "2025-10-08T10:52:18+02:00"
 title = "An interactive Yocto shell for device provisioning"
 description = "An interactive Yocto shell for factory provisioning: validated MAC input, flashing swupdate, erasing NOR flash and writing EEPROM on embedded Linux."
 type = "post"

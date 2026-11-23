@@ -1,5 +1,7 @@
 +++
 date = "2024-04-22"
+# PR #2 only changed metadata and formatting; keep the last real edit.
+lastmod = "2025-10-08T10:52:18+02:00"
 title = "Typed Python CLI arguments with argparse and StrEnum"
 description = "Derive argparse choices from Python types: use StrEnum and the type parameter so a build script's CLI options update when the enum changes."
 type = "post"

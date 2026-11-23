@@ -1,5 +1,7 @@
 +++
 date = "2020-07-17"
+# PR #2 only changed metadata and formatting; keep the last real edit.
+lastmod = "2020-10-14T16:27:51+02:00"
 title = "First Post"
 description = "Why I started a software engineering blog: writing about solutions I and colleagues built, reflecting on my career, and getting better at writing."
 type = "post"

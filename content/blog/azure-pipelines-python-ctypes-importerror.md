@@ -1,7 +1,7 @@
 +++
 date = "2025-01-31"
 title = "Fix the ctypes _type_ error on Azure Pipelines"
-description = "pip fails on a self-hosted Windows Azure Pipelines agent with \"class must define a '_type_' attribute\". Why Python 3.8+ can't find DLLs, and the fix."
+description = "pip fails on a self-hosted Windows Azure Pipelines agent with \"class must define a '_type_' attribute\". Prepending Python's DLLs folder to PATH fixed it."
 type = "post"
 categories = ["Devops"]
 tags = ["devops", "python"]
@@ -21,17 +21,17 @@ It is an `AttributeError` raised while importing `ctypes`, not an `ImportError`.
 
 ## The fix
 
-Prepend Python's `DLLs` directory to the `PATH` in the pipeline:
+Prepend Python's `DLLs` directory to the `PATH` in the pipeline. On a Windows agent a `script:` step runs in cmd.exe, so use a `powershell:` step (Windows PowerShell, available on any Windows agent):
 
 ```yaml
 steps:
-  - script: |
-      PYTHON_ROOT=$(python -c "import sys; import os; print(os.path.dirname(sys.executable))")
-      echo "##vso[task.prependpath]${PYTHON_ROOT}/DLLs"
+  - powershell: |
+      $root = python -c "import sys, os; print(os.path.dirname(sys.executable))"
+      Write-Host "##vso[task.prependpath]$root\DLLs"
     displayName: "Fix Python DLL Path"
 ```
 
-This makes Windows search Python's `DLLs` directory when loading the extension modules that `ctypes` needs.
+The step prepends the interpreter's `DLLs` folder to the `PATH` of all later steps in the job.
 
 ### A minimal pipeline
 
@@ -49,9 +49,9 @@ steps:
       versionSpec: '3.12'
       addToPath: true
 
-  - script: |
-      PYTHON_ROOT=$(python -c "import sys; import os; print(os.path.dirname(sys.executable))")
-      echo "##vso[task.prependpath]${PYTHON_ROOT}/DLLs"
+  - powershell: |
+      $root = python -c "import sys, os; print(os.path.dirname(sys.executable))"
+      Write-Host "##vso[task.prependpath]$root\DLLs"
     displayName: "Fix Python DLL Path"
 
   - script: |
@@ -84,6 +84,6 @@ A typical Python installation on Windows consists of:
 - Standard libraries in `<PYTHON_ROOT>\Lib`.
 - DLLs (such as `_ctypes.pyd`, `_queue.pyd`) in `<PYTHON_ROOT>\DLLs`
 
-Since Python 3.8, Python controls how DLLs are loaded on Windows through [`os.add_dll_directory()`](https://docs.python.org/3/library/os.html#os.add_dll_directory), instead of relying on the default search path.
+I did not pin down the root cause. What I know is that prepending the `DLLs` folder to `PATH` made the error go away on this agent, and that `python.exe` works when I run it manually but not inside the pipeline.
 
-When you run `python.exe` manually, your user session resolves the `DLLs` directory. When the Azure Pipelines agent runs Python, it starts in a minimal environment where the `DLLs` directory is not on the `PATH`, so Windows cannot load the extension modules `ctypes` depends on. That surfaces as the `AttributeError` above.
+Since Python 3.8, Windows resolves the DLL dependencies of extension modules through the application directory, the system directories and [`os.add_dll_directory()`](https://docs.python.org/3/library/os.html#os.add_dll_directory), not through `PATH`. So the `PATH` change is a workaround that worked here, not a documented way to load extension modules. If you want to stay within what Python documents, use the `os.add_dll_directory()` alternative above.

@@ -1,5 +1,7 @@
 +++
 date = "2023-03-02"
+# PR #2 only changed metadata and formatting; keep the last real edit.
+lastmod = "2025-10-08T10:52:18+02:00"
 title = "std::variant: build an array of all alternatives"
 description = "Use variant_size and variant_alternative with an index sequence to build a compile-time array holding one instance of each std::variant alternative."
 type = "post"

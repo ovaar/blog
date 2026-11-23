@@ -45,7 +45,7 @@ iface eth0 inet dhcp
 
 Now we know how and where to set the MAC address. Next, we can read the first six bytes using `dd` and pipe it to `hexdump`. Fortunately, [hexdump](https://www.man7.org/linux/man-pages/man1/hexdump.1.html) already provides API for formatting the input.
 
-The `-e '1/1' %02x` parameter will format each space followed by a byte into a hexadecimal number with two digits and a leading zero if needed.
+The `-e '1/1 "%02x:"'` format string prints each byte as a hexadecimal number with two digits (and a leading zero if needed), followed by a colon.
 
 ```bash
 DELIMITER=":"
@@ -56,7 +56,7 @@ echo $MAC # output 00:01:02:03:04:05:
 Finally the trailing colon `:` needs to be removed. There are multiple ways to do this
 
 1. Pipe the output to `sed` and replace the last `:` OR
-2. Use Bash Substring Expansion to remove the character from a string.
+2. Use POSIX parameter expansion to remove the last character from a string.
 
 Solution 1:
 
@@ -68,7 +68,26 @@ Solution 2:
 
 ```shell
 MAC=$(dd if=$EEPROM bs=6 count=1 | hexdump -ve '1/1 "%02x'"$DELIMITER"'"')
-MAC=${MAC::-1} # Remove last character ':'
+MAC=${MAC%?} # Remove last character ':'
 ```
 
+`${MAC%?}` strips the shortest suffix that matches one character. It works in any POSIX `sh`, including the BusyBox `sh` that many Yocto images ship. The more common `${MAC::-1}` only works in bash.
+
 Personally I prefer solution 2 since I find that `sed` harder to read and I often have to explain it to other engineers who are reviewing it. Therefore solution 2 (with a comment) is clearer. If you are a system expert and love one-lines, go for solution 1.
+
+## Applying it
+
+The last step is to hand the address to the interface. Put together, the script reads the EEPROM, formats the address and sets it on `eth0` while the interface is down:
+
+```shell
+#!/bin/sh
+DELIMITER=":"
+MAC=$(dd if="$EEPROM" bs=6 count=1 | hexdump -ve '1/1 "%02x'"$DELIMITER"'"')
+MAC=${MAC%?} # Remove last character ':'
+
+ip link set dev eth0 down
+ip link set dev eth0 address "$MAC"
+ip link set dev eth0 up
+```
+
+Run it on every boot, before the interface is brought up for normal use, so the EEPROM value is applied each time.
