@@ -1,14 +1,13 @@
 +++
 date = "2025-12-17"
 title = "Why std::expected matters for error handling"
+description = "How C++23 std::expected and std::error_code work together: custom error categories, monadic chaining, and why categories must live in a .cpp file."
 type = "post"
 categories = ["Development"]
 tags = ["cpp"]
 +++
 
-# Why std::expected matters for error handling
-
-C++23 introduced [std::expected](https://en.cppreference.com/w/cpp/utility/expected.html), changing how we handle errors without exceptions. When you combine it with [std::error_code](https://en.cppreference.com/w/cpp/error/error_code.html) (available since C++11), you get an error handling approach that forces explicit error checks while keeping your code readable.
+C++23 introduced [std::expected](https://en.cppreference.com/w/cpp/utility/expected.html), changing how we handle errors without exceptions. When you combine it with [std::error_code](https://en.cppreference.com/w/cpp/error/error_code.html) (available since C++11), you get an error handling approach that forces explicit error checks while keeping your code readable. For the C++17 pieces used below, such as `std::optional` and `std::variant`, see [Practical C++17 highlights by example](/blog/practical-cppstd17/).
 
 The real power comes from `std::error_code` carrying more than just a number. Through [std::error_category](https://en.cppreference.com/w/cpp/error/error_category.html), it associates error codes with human-readable messages and [std::error_condition](https://en.cppreference.com/w/cpp/error/error_condition.html) values, letting you classify errors by severity (fatal, warning, informational) rather than checking individual error codes.
 
@@ -58,9 +57,9 @@ Here's what sets them apart:
 
 The best pattern? Use them together: `std::expected<T, std::error_code>`. You get type-safe control flow from `std::expected` plus standardized error reporting from `std::error_code`.
 
-# Practical examples
+## Practical examples
 
-## Traditional approach with std::error_code
+### Traditional approach with std::error_code
 
 Here's the classic pattern—error code as return value, actual data as output parameter:
 
@@ -107,7 +106,7 @@ This works, but notice:
 - You could forget to check `ec` and use `contents` anyway
 - Output parameters make the API less composable
 
-## Modern approach with std::expected
+### Modern approach with std::expected
 
 The same functionality with `std::expected` is clearer:
 
@@ -150,7 +149,7 @@ int main() {
 }
 ```
 
-## Creating custom error categories with HTTP status codes
+### Creating custom error categories with HTTP status codes
 
 `std::error_code` becomes powerful when you define domain-specific categories. HTTP response codes are a perfect example—everyone knows what 404 or 500 means, but you still want to classify them generically (client error vs server error).
 
@@ -288,7 +287,7 @@ if (response.code == http_error_condition::SERVER_ERROR) {
 
 The beauty here: you can check for broad categories (`CLIENT_ERROR`) without knowing every specific code. This is what makes `std::error_condition` valuable—it carries the semantic weight of error classification.
 
-## Chaining operations functionally
+### Chaining operations functionally
 
 One of the biggest advantages of `std::expected` is composability. You can chain operations without nested if-statements. Here's a real-world example from XML parsing:
 
@@ -348,7 +347,7 @@ if (name && age) {
 
 This is similar to Rust's `?` operator or functional programming's monadic composition. Each step automatically propagates errors, and `.or_else()` lets you handle errors inline without breaking the chain. No nested if-statements, no manual error propagation—the type system handles it.
 
-# Lessons learned
+## Lessons learned
 
 After working with both `std::error_code` and `std::expected` in production code, here are the key takeaways:
 
@@ -374,7 +373,7 @@ If you're converting an existing codebase:
 2. Gradually convert internal functions to return `std::expected` directly
 3. Keep error categories consistent across old and new code
 
-## A critical gotcha: error categories must be in shared libraries
+### A critical gotcha: define error categories in a .cpp file, not a header
 
 This is important and non-obvious: **error category definitions must be in a compiled translation unit (`.cpp` file), not header-only.** If you define your category in a header that gets included in multiple translation units, error comparisons will break.
 
@@ -414,9 +413,8 @@ namespace network {
 
 This ensures every translation unit uses the same category instance, making pointer comparisons work correctly. This requirement ties error categories to compiled libraries—you can't easily use them in header-only libraries without workarounds.
 
-# Conclusion
+## Conclusion
 
 The combination of `std::expected` and `std::error_code` gives you the best of both worlds: type-safe APIs with rich, standardized error information. `std::error_condition` adds semantic weight by letting you classify errors generically (like HTTP's client vs server errors) without checking individual codes.
 
-It's the current C++ way to handle errors without exceptions—just watch out for that category definition gotcha
-The combination of `std::expected` and `std::error_code` gives you the best of both worlds: type-safe APIs with rich, standardized error information. It's the current C++ way to handle errors without exceptions.
+It's the current C++ way to handle errors without exceptions—just watch out for that category definition gotcha.

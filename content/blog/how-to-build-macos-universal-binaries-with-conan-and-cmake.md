@@ -1,6 +1,7 @@
 +++
 date = "2022-11-25"
-title = "How to build Macos Universal Binaries with Conan and CMake"
+title = "Build macOS Universal Binaries with Conan and CMake"
+description = "Build x86_64 and arm64 macOS Universal Binaries with Conan and CMake: CMakeToolchain, Autotools, Boost, lipo and automated recipe patching."
 type = "post"
 categories = ["Development"]
 tags = ["conan", "cmake"]
@@ -13,8 +14,8 @@ tags = ["conan", "cmake"]
 * Added section about compiling boost.
 * Added automated patching section.
 
+For the wider Conan 2 migration, see [Conan 2.x migration and the lessons learned](/blog/conan-2x-migration-lessons-learned/).
 
-# How to build Macos Universal Binaries with Conan and CMake
 
 [Universal Binaries](https://developer.apple.com/documentation/apple-silicon/building-a-universal-macos-binary) contain native instructions for multiple target architectures like x86_64 and arm64 to run your app both on Intel Mac and Apple silicon machines. When using Conan there are a few common build systems, or native build tool generators, when creating packages from the Conan Center Index(CCI) like: CMake, Autotools, Pkgconfig, b2 (Boost Build) and Make. Some of these build tools have build-in support when it comes to building Universal Binaries.
 

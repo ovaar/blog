@@ -1,50 +1,36 @@
 +++
 date = "2025-01-31"
-title = "Deploying a Blog with GitHub Actions, Docker, and Submodules"
-description = "A step-by-step guide to deploying a static blog using GitHub Actions, Docker, and submodules."
+title = "GitHub Actions: deploy Hugo to a Pages submodule"
+description = "Fix 403 errors when a GitHub Actions workflow pushes a Hugo build to a GitHub Pages submodule: a fine-grained token, submodule checkout and the push."
 type = "post"
 categories = ["DevOps", "GitHub Actions", "Docker"]
 tags = ["github", "devops", "docker", "git"]
 +++
 
-## 🚀 Deploying a Blog with GitHub Actions, Docker, and Submodules
+The workflow builds the blog in Docker and pushes the result into a second repository, and the push fails:
 
-### 📌 Problem Statement
-If you’re using GitHub Actions to **build and deploy a static blog** that:
-- Runs inside **Docker**
-- Pushes generated content to a **GitHub Pages submodule**
-- Requires **Git authentication** to commit and push changes
+```plaintext
+remote: Permission to <owner>/<repo>.git denied to github-actions[bot].
+fatal: unable to access 'https://github.com/<owner>/<repo>.git/': The requested URL returned error: 403
+```
 
-Then, you might run into permission issues, especially when pushing to submodules.
+The built-in `GITHUB_TOKEN` is only valid for the repository the workflow runs in. This blog keeps its generated site in a separate GitHub Pages repository, mounted as the `public` submodule, so pushing there needs a token that has access to that repository. The fix has three parts: a personal access token, a checkout that uses it, and a push from inside the submodule.
 
-This guide walks you through setting up **GitHub Actions** to automatically deploy your blog **without permission errors**.
+## 1. Create a personal access token
 
----
+1. Go to GitHub Settings, Developer settings, Personal access tokens, Fine-grained tokens, and generate a new token.
+2. Set an expiry date.
+3. Under repository access, select only the repository you push to (the Pages repository).
+4. Under permissions, set Contents to Read and write.
+5. Copy the token.
 
-## ✅ Step 1: Set Up a GitHub Personal Access Token (PAT)
-GitHub’s default `GITHUB_TOKEN` **cannot push** to repositories requiring extra permissions (like GitHub Pages). You need a **Personal Access Token (PAT)**.
+Then store it as a repository secret in the repository that runs the workflow: Settings, Secrets and variables, Actions, New repository secret. The workflow below expects the name `GH_PAT`.
 
-### 🔥 Generate a PAT
-1. **Go to GitHub Settings → Developer Settings → Personal Access Tokens → Fine-grained tokens**
-2. Click **"Generate new token"**
-3. Set **Expiration**: Recommended **No Expiration**
-4. **Repository access**: Select **both** repositories (your main repo and GitHub Pages repo)
-5. **Permissions**:
-   - ✅ `Contents: Read & Write`
-   - ✅ `Workflows: Read & Write`
-6. Click **Generate Token** and **copy the token**
+The token stops working on its expiry date. Put a reminder in your calendar to create a new one and update the secret.
 
-### 🔥 Add `GH_PAT` to GitHub Secrets
-- Go to **GitHub Repo → Settings → Secrets and Variables → Actions**
-- Click **New repository secret**
-- Name it **`GH_PAT`**
-- Paste the copied token
-- Repeat steps for each submodule repository that requires access.
+## 2. Check out with the token and configure the submodule
 
----
-
-## ✅ Step 2: Configure GitHub Actions Workflow
-Create `.github/workflows/deploy.yml`:
+Pass the token to `actions/checkout` so the submodules are cloned with it. Then rewrite GitHub URLs to include the token and set a commit identity inside the `public` submodule:
 
 ```yaml
 name: Deploy Blog
@@ -52,8 +38,8 @@ name: Deploy Blog
 on:
   push:
     branches:
-      - main  # Adjust if needed
-  workflow_dispatch:  # Allows manual triggering
+      - master
+  workflow_dispatch:
 
 jobs:
   deploy:
@@ -61,50 +47,59 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
-          submodules: true  # Ensures submodules are initialized and updated
+          submodules: recursive
           fetch-depth: 0
-          token: ${{ secrets.GH_PAT }} # 🔥 Ensures submodules use PAT
+          token: ${{ secrets.GH_PAT }}
+          persist-credentials: true
 
-      - name: Submodule cleanup fix  # Bodge for https://github.com/actions/checkout/issues/358
+      - name: Configure git credentials for submodule
         run: |
-          git submodule foreach --recursive git clean -ffdx
-          git submodule foreach --recursive git reset --hard
-          git submodule foreach --recursive git checkout -f master
-
-      - name: Run docker compose
-        run: docker compose up blog
-      
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          repository: public
-          branch: master # Adjust if needed
-          push_options: --force
-          create_branch: false
+          git config --global url."https://x-access-token:${{ secrets.GH_PAT }}@github.com/".insteadOf "https://github.com/"
+          cd public
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
 ```
 
----
+The `url.insteadOf` setting makes every `https://github.com/` URL carry the token, including the submodule's remote from `.gitmodules`, so the later `git push` from `public` is authenticated.
 
-## ✅ Step 3: Push and Test
-1. **Commit and push changes**
-   ```sh
-   git add .
-   git commit -m "Set up GitHub Actions deployment"
-   git push origin main
-   ```
-2. **Trigger the workflow manually** (optional) from GitHub Actions.
-3. **Check GitHub Actions logs** for errors.
+## 3. Build and push from the submodule
 
----
+Run the Hugo build through `docker compose`, then commit and push from inside `public`:
 
-## 🎯 Summary
-✅ Use a **GitHub PAT** instead of `GITHUB_TOKEN` for pushing to submodules.
-✅ Pass the **PAT token** in `actions/checkout@v4`.
-✅ **Set Git credentials** in `deploy.sh`.
-✅ Update submodule **remote URLs** before pushing.
+```yaml
+      - name: Get UID and GID
+        run: |
+          echo "UID=$(id -u)" >> $GITHUB_ENV
+          echo "GID=$(id -g)" >> $GITHUB_ENV
 
-Now, your blog should **auto-deploy** whenever you push changes! 🚀
+      - name: Prepare Hugo cache directory
+        run: mkdir -p "${{ runner.temp }}/hugo_cache"
 
-Need help? Drop a comment below! 😊
+      - name: Run docker compose
+        run: |
+          docker compose run --rm \
+            -v "${{ runner.temp }}/hugo_cache:/cache" \
+            blog \
+              --gc \
+              --minify \
+              --noTimes
 
+          cd public
+          git add .
+          git commit -m "Deploy site $(date)" || echo "No changes to commit"
+          git push origin master
+        env:
+          HUGO_CACHEDIR: ${{ runner.temp }}/hugo_cache
+          HUGO_ENVIRONMENT: production
+```
+
+The UID and GID are exported so the container user matches the runner user and can write to the mounted directories. The `|| echo` after `git commit` keeps the step green when nothing changed.
+
+## Summary
+
+- `GITHUB_TOKEN` cannot push to another repository, so use a fine-grained personal access token limited to the target repository, with Contents read and write and an expiry date, stored as a repository secret.
+- Pass it to `actions/checkout` with `token:` and `submodules: recursive`.
+- Rewrite `https://github.com/` URLs with `url.insteadOf` and set the git identity inside the submodule.
+- Build with `docker compose run`, then commit and push from `public`.

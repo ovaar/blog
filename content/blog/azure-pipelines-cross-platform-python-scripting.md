@@ -1,12 +1,11 @@
 +++
 date = "2024-08-01"
-title = "Azure pipelines cross-platform python scripting"
+title = "Running Python cross-platform in Azure Pipelines"
+description = "Make python vs python3 work on Windows, macOS and Linux self-hosted Azure Pipelines agents: UsePythonVersion limits, PATH and pip, in one template."
 type = "post"
 categories = ["Devops"]
 tags = ["devops", "azure"]
 +++
-
-# Azure pipelines cross-platform python scripting
 
 This post is a continuation of [Azure pipelines cross-platform scripts]({{< ref "blog/azure-pipelines-cross-platform-scripts" >}}) for Self-Hosted Azure agents. If you've missed it make sure to read this first, since we're going to extend on it.
 
@@ -263,5 +262,7 @@ _work/
                     bin/
                 {all_your_packages...}
 ```
+
+If `pip install` fails on a Windows agent with an `AttributeError` from `ctypes`, see [the ctypes `_type_` error on Azure Pipelines](/blog/azure-pipelines-python-ctypes-importerror/).
 
 Happy coding.

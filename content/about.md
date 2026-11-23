@@ -2,6 +2,7 @@
 title = "About"
 date = "2026-11-23"
 menu = "main"
+description = "Thomas Reynders, software engineer in Leeuwarden: 3D product configurators at Elfsquad, C++ tooling at BIMcollab, embedded Linux before that."
 +++
 
 # About
@@ -32,42 +33,3 @@ Writing things down is how I make sure I understand them. Most posts here starte
 
 * [GitHub](https://github.com/ovaar)
 * [LinkedIn](https://www.linkedin.com/in/thomasreynders/)
-
-<script type="application/ld+json">
-{
-  "@context": "https://schema.org",
-  "@type": "Person",
-  "name": "Thomas Reynders",
-  "url": "https://ovaar.github.io/about/",
-  "jobTitle": "Customization Lead",
-  "description": "Lead product engineer working on 3D product configurators, CAD on the web and AI-assisted engineering.",
-  "worksFor": {
-    "@type": "Organization",
-    "name": "Elfsquad",
-    "url": "https://www.elfsquad.io"
-  },
-  "address": {
-    "@type": "PostalAddress",
-    "addressLocality": "Leeuwarden",
-    "addressCountry": "NL"
-  },
-  "knowsAbout": [
-    "TypeScript",
-    "React",
-    "Three.js",
-    "React Three Fiber",
-    "glTF",
-    "Autodesk Platform Services",
-    "CPQ",
-    "CAD",
-    "BIM",
-    "C++",
-    "AI agents",
-    "Model Context Protocol"
-  ],
-  "sameAs": [
-    "https://www.linkedin.com/in/thomasreynders/",
-    "https://github.com/ovaar"
-  ]
-}
-</script>

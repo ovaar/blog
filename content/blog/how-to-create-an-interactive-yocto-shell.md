@@ -1,6 +1,7 @@
 +++
 date = "2020-07-20"
-title = "How to create an interactive Yocto shell"
+title = "An interactive Yocto shell for device provisioning"
+description = "An interactive Yocto shell for factory provisioning: validated MAC input, flashing swupdate, erasing NOR flash and writing EEPROM on embedded Linux."
 type = "post"
 categories = ["Development", "Linux"]
 tags = ["linux", "yocto"]
@@ -90,3 +91,5 @@ WantedBy=multi-user.target
 ```
 
 Now you can boot your system without an user login promp but still access all features of your BSP running Linux.
+
+The script reads and writes the MAC address in the EEPROM. [The next post](/blog/how-to-set-linux-mac-address/) shows how to read it back and apply it to the network interface.

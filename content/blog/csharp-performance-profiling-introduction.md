@@ -1,6 +1,7 @@
 +++
 date = "2020-10-14"
 title = "C# Performance - Profiling introduction"
+description = "Profiling a C# WPF inspection app: hotspots, memory allocation, microarchitecture and threading efficiency with VTune, dotTrace and Visual Studio."
 type = "post"
 categories = ["Development", "Performance"]
 tags = ["csharp", "perf"]
@@ -8,19 +9,17 @@ tags = ["csharp", "perf"]
 
 Welcome! In this blog series I will share some of the knowledge I gained when doing performance optimizations for a project some time ago. Optimizing code for performance requires good knowledge of the fundamental concepts of computer architecture. In this first blog post I will explain about software profiling, some of the computer architecture concepts and my personal experience what worked for my and what did not. In later post(s) I will go more into detail in how to optimize code for performance.
 
-![high performance](https://media1.tenor.com/images/9a8cd260ef1cc7f1544c65530966ee93/tenor.gif?itemid=5593963)
-
 About a year ago I was challenged to improve the overall application performance of a C# WPF application. The application was built for a steel plate inspection system. Using ultrasound, the system is capable of detecting defects in steel plates. For your imagination, these steel plate could go up to 40 by 5 meters (pretty huge). One of the main functions of the application is to receive and parse streams of data which were send by an FPGA via TCP. After parsing the characteristics of a "shot" were being calculated and a 3D model of the steel plate is updated and displayed in near real-time.
 
 When I joined this project, it was already running for about two years and the first prototype was built. This machine contained 1 FPGA and a single transceiver probe. At that time there were already signs of performance issues. But before we could start improving the software, we had to polish the existing application for its first customer. Because of time pressure the machine needed to be sold and the next generation had to be built as well. This next generation machine contained 20 FPGA's and 80 transceiver probes. These requirements were getting more serious but theoretically this would not be a problem.
 
 Some time went by and more and more code were added, the customers wishes changed, the principal system architect left the project and no replacement was ever found. Engineers with different ideas have come and gone. The "legacy" code base was dying to get an update! I remember when connecting more than a single FPGA device the software would completely freeze the computer. We were hitting a wall! The software architecture was not scalable at all...
 
-You might have found yourself in such a situation. When experiencing performance issues, you will find yourself very quickly in a new world with software profilers. Profilers such as the one embedded in Microsoft Visual Studio, [Intel VTune Profiler](https://software.intel.com/content/www/us/en/develop/tools/vtune-profiler.html), Reshaper tools such as [dotTrace](https://www.jetbrains.com/profiler/) or [dotMemory](https://www.jetbrains.com/dotmemory/).
+You might have found yourself in such a situation. When experiencing performance issues, you will find yourself very quickly in a new world with software profilers. Profilers such as the one embedded in Microsoft Visual Studio, [Intel VTune Profiler](https://www.intel.com/content/www/us/en/developer/tools/oneapi/vtune-profiler.html), Reshaper tools such as [dotTrace](https://www.jetbrains.com/profiler/) or [dotMemory](https://www.jetbrains.com/dotmemory/).
 
 <br />
 
-### Profiling
+## Profiling
 
 Software profiling is about getting metrics/samples about the application or system-wide used resources like CPU, RAM or GPU. These metrics can give insight in how fast code is executed, what memory is being allocated, how well the code is being executed in parallel, etc...
 
@@ -39,7 +38,7 @@ Below a small comparison table between these two sampling methods.
 
 <br />
 
-#### Hotspots
+### Hotspots
 
 Code "hotspots" refer to functions in the call stack which are executed very often. Reducing the execution time or the amount of times executing the operation can result in faster overall execution time of your program, by making room for other operations.
 
@@ -47,7 +46,7 @@ When it comes to finding these hotspots, I personally prefer using Intel VTune P
 
 <br />
 
-#### Memory Allocation
+### Memory Allocation
 
 Allocating new memory reserves a block of memory on the stack, heap or virtual memory. Both the stack and heap are physically located in RAM (Random Access Memory). If you are new to the concepts stack or heap or just looking for a refresher; The stack is a fixed size block of memory reserved for the execution of a thread. In processes each thread has its own stack. A stack is a LIFO (last in first out) and consists of stack frames. On each function call a new stack frame, containing local variables, is added. When a function exits the stack frame is `popped` from the stack, releasing the allocated memory automatically. Due to the fixed size of the stack it is possible to run out of memory, this results in a StackOverflow Exception. The stack size is determined at application startup and depends on the system architecture and operating system.
 
@@ -105,7 +104,7 @@ When profiling for memory allocations I found that Resharper dotTrace works for 
 
 <br />
 
-#### Microarchitecture
+### Microarchitecture
 
 The CPU contains allot of optimizations to maximize the performance. Examples of these feature are caching and branch prediction. Even when the CPU facilitates optimizations, they can also work against you, so being aware of how the CPU works is essential when writing good code. I recommend watching this video; [Understanding CPU Microarchitecture to Increase Performance](https://www.infoq.com/presentations/microarchitecture-modern-cpu/), where Alex Blewitt talks about: the CPU layout, caching, the memory layout, execution units and scheduling.
 
@@ -118,7 +117,7 @@ Intel VTune Profiler offers great insight in the Microarchitecture bottlenecks o
 3. Branch mispredictions
 4. Availability of Pipeline execution slots
 
-#### Threading Efficiency
+### Threading Efficiency
 
 Each process has its own resources in order to execute a program such as; virtual address space, executable code, open handles to system objects, a security context, a unique process identifier, environment variables, a priority class, minimum and maximum working set sizes, and at least one thread of execution. The first thread is often called _primary thread_ or _main thread_.
 
@@ -146,7 +145,7 @@ Thomas
 
 <br />
 
-#### Resoures
+### Resources
 
 Even more details can be found in the following pages.
 

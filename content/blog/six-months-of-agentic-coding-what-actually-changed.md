@@ -1,14 +1,13 @@
 +++
 date = "2026-11-23"
 title = "Six months of agentic coding: what actually changed"
+description = "After about 500 merged PRs with coding agents: write constraints instead of code, separate builder and critic, keep PRs small, and verify like a user."
 type = "post"
 categories = ["Development"]
 tags = ["ai", "agents", "workflow"]
 +++
 
-# Six months of agentic coding: what actually changed
-
-A year ago I wrote that AI had gone from "a weird PhD intern" to a normal part of the development workflow. Since May I've led a team where coding agents do most of the typing. In that time I merged a little under 500 pull requests across our platform, our 3D viewer and the conversion tooling behind it.
+Since May I've led a team where coding agents do most of the typing. In that time I merged a little under 500 pull requests across our platform, our 3D viewer and the conversion tooling behind it.
 
 The number says less than it seems to. Typing was never the bottleneck. What changed is where my attention goes, and this post is about that.
 
@@ -58,4 +57,4 @@ Linting, formatting, audit gates, test coverage and release automation used to b
 
 The work moved from writing code to deciding what should exist and checking that it does. I find I like that part of the job more.
 
-<!-- TODO Thomas: add one concrete before/after example you're comfortable sharing, then remove `draft = true`. -->
+{{< ascii kind="handoff" caption="Before: one large change, written by me, waits for review. After: I write the rules, agents open small PRs, and a critic and CI turn some back before anything merges." >}}

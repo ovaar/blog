@@ -1,12 +1,13 @@
 +++
 date = "2023-03-02"
-title = "Create an array of all possible variants alternatives of std::variant type"
+title = "std::variant: build an array of all alternatives"
+description = "Use variant_size and variant_alternative with an index sequence to build a compile-time array holding one instance of each std::variant alternative."
 type = "post"
 categories = ["Development"]
 tags = ["cpp"]
 +++
 
-The standard library [std::variant](https://en.cppreference.com/w/cpp/utility/variant) is a usefull feature, introduced since c++17, to define a type that can hold multiple alternative types. 
+The standard library [std::variant](https://en.cppreference.com/w/cpp/utility/variant) is a usefull feature, introduced since c++17 (more C++17 examples in [Practical C++17 highlights by example](/blog/practical-cppstd17/)), to define a type that can hold multiple alternative types. 
 
 For example a cell of a CSV file could represent multiple data types such as a string or int. Declaring a new type `std::variant<std::string, int>` allows to store one of the alternative types at the time. The std::variant internally allocates space for the largest alternative type. 
 

@@ -1,15 +1,13 @@
 +++
 date = "2025-01-31"
-title = "Azure pipelines - ctypes importerror"
+title = "Fix the ctypes _type_ error on Azure Pipelines"
+description = "pip fails on a self-hosted Windows Azure Pipelines agent with \"class must define a '_type_' attribute\". Why Python 3.8+ can't find DLLs, and the fix."
 type = "post"
 categories = ["Devops"]
 tags = ["devops", "python"]
 +++
 
-
-# Fixing `ctypes` ImportError in Azure Pipelines: Missing `_type_` Attribute
-
-When running `pip install` in an Azure Pipelines self-hosted agent, you might encounter the following error:
+When running `pip install` on an Azure Pipelines self-hosted Windows agent, it can fail with this error:
 
 ```plaintext
 File "~\myselfhostedagent\_work\_tool\Python\3.12.3\x64\Lib\site-packages\pip\_vendor\platformdirs\windows.py", line 254, in _pick_get_win_folder
@@ -19,42 +17,11 @@ File "~\myselfhostedagent\_work\_tool\Python\3.12.3\x64\Lib\site-packages\pip\_v
 AttributeError: class must define a '_type_' attribute
 ```
 
-Interestingly, if you manually execute `pip install` using the same `python.exe`, it works fine. However, when executed within the Azure Pipelines agent, it fails.
+It is an `AttributeError` raised while importing `ctypes`, not an `ImportError`. If you run `pip install` manually with the same `python.exe` it works, but inside the Azure Pipelines agent it fails.
 
-In this post, we'll explore why this happens and how to fix it.
+## The fix
 
----
-
-## 🚨 **Why Does This Happen?**
-
-### **1. Python’s DLL Handling in Windows**
-
-A typical Python installation on Windows consists of:
-
-- `python.exe` in `<PYTHON_ROOT>`.
-- Standard libraries in `<PYTHON_ROOT>\Lib`.
-- DLLs (such as `_ctypes.pyd`, `_queue.pyd`) in `<PYTHON_ROOT>\DLLs`
-
-Before Python 3.8, Windows would automatically find these DLLs when needed. However, since **Python 3.8**, Microsoft tightened security, and Python now explicitly controls how DLLs are loaded using [`os.add_dll_directory()`](https://docs.python.org/3/library/os.html#os.add_dll_directory).
-
-### **2. The Azure Pipelines Environment Is Different**
-
-- When you run `python.exe` manually, your user session **automatically resolves** the `DLLs` directory.
-- When the Azure Pipelines agent runs Python, it **starts in a minimal environment**, and Windows **does not find the required DLLs** unless they are explicitly referenced.
-
-### **3. Why pip Fails**
-
-The `ctypes` module relies on system DLLs to function. Since the Python DLLs directory is not in `PATH`, Windows fails to load necessary components, resulting in:
-
-```plaintext
-AttributeError: class must define a '_type_' attribute
-```
-
----
-
-## ✅ **How to Fix It**
-
-To ensure the agent can find the DLLs, **prepend the `DLLs` directory** to the PATH in the pipeline:
+Prepend Python's `DLLs` directory to the `PATH` in the pipeline:
 
 ```yaml
 steps:
@@ -64,13 +31,11 @@ steps:
     displayName: "Fix Python DLL Path"
 ```
 
-This tells Windows to search Python’s `DLLs` directory when loading system dependencies.
+This makes Windows search Python's `DLLs` directory when loading the extension modules that `ctypes` needs.
 
----
+### A minimal pipeline
 
-## 🔧 **Minimal Azure Pipelines YAML File**
-
-Here’s a minimal example including `UsePythonVersion@0` to ensure the correct Python version is used:
+This example adds `UsePythonVersion@0` so the correct Python version is on the `PATH` first. See [Running Python cross-platform in Azure Pipelines](/blog/azure-pipelines-cross-platform-python-scripting/) for setting up Python on self-hosted agents.
 
 ```yaml
 trigger: main
@@ -95,11 +60,9 @@ steps:
     displayName: "Install Dependencies"
 ```
 
----
+### Alternative: `os.add_dll_directory()`
 
-## 📌 **Alternative: Use **``
-
-If you prefer not to modify `PATH`, you can explicitly set the DLL directory inside your Python script before using `ctypes`:
+If you prefer not to modify `PATH`, set the DLL directory inside your Python script before using `ctypes`:
 
 ```python
 import os
@@ -111,17 +74,16 @@ os.add_dll_directory(dll_path)
 import ctypes  # This should now work correctly
 ```
 
-However, setting `PATH` in the pipeline is a more universal fix, ensuring all Python processes in the build agent work without modification.
+This only helps code you control. Setting `PATH` in the pipeline also covers pip and any other Python process on the agent.
 
----
+## Why it happens
 
-## 🎯 **Conclusion**
+A typical Python installation on Windows consists of:
 
-- **Why does this happen?** Windows no longer automatically searches Python’s `DLLs` folder.
-- **Why only in Azure Pipelines?** The agent runs with a minimal environment that lacks the required paths.
-- **How to fix it?** Prepend the `DLLs` directory to `PATH` in the pipeline or use `os.add_dll_directory()` in Python scripts.
+- `python.exe` in `<PYTHON_ROOT>`.
+- Standard libraries in `<PYTHON_ROOT>\Lib`.
+- DLLs (such as `_ctypes.pyd`, `_queue.pyd`) in `<PYTHON_ROOT>\DLLs`
 
-By applying this fix, you can prevent `pip install` and `ctypes`-related failures in your Azure Pipelines self-hosted agent.
+Since Python 3.8, Python controls how DLLs are loaded on Windows through [`os.add_dll_directory()`](https://docs.python.org/3/library/os.html#os.add_dll_directory), instead of relying on the default search path.
 
-Happy coding! 🚀
-
+When you run `python.exe` manually, your user session resolves the `DLLs` directory. When the Azure Pipelines agent runs Python, it starts in a minimal environment where the `DLLs` directory is not on the `PATH`, so Windows cannot load the extension modules `ctypes` depends on. That surfaces as the `AttributeError` above.

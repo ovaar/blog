@@ -1,12 +1,11 @@
 +++
 date = "2026-11-23"
-title = "Converting Autodesk SVF to glTF: what the tutorials leave out"
+title = "Autodesk SVF to glTF: what the tutorials leave out"
+description = "Four pitfalls converting Autodesk SVF to glTF for Three.js: keep the node tree, carry dbId as _ID, preserve material names, never guess units."
 type = "post"
 categories = ["Development"]
 tags = ["3d", "gltf", "autodesk", "typescript"]
 +++
-
-# Converting Autodesk SVF to glTF: what the tutorials leave out
 
 When you upload a CAD file to Autodesk Platform Services (formerly Forge), the Model Derivative API translates it to SVF, the format the Autodesk viewer reads. That works well as long as you stay inside the Autodesk viewer.
 
@@ -14,7 +13,7 @@ We wanted to render the same models with [Three.js](https://threejs.org/) and [R
 
 This post covers the four things that cost us the most time.
 
-<!-- TODO Thomas: one screenshot of the same model in the Autodesk viewer and in the R3F viewer, side by side. -->
+{{< ascii kind="twin" caption="The same model as SVF and as glTF: the triangles change format, the node tree and material names don't." >}}
 
 ## 1. The node tree is an API contract
 
@@ -34,7 +33,7 @@ Every object in an SVF has a `dbId`. The property database, selection and the vi
 
 glTF has no place for it by default, so the converter needs to carry it across. We store it as a custom vertex attribute named `_ID`. The underscore prefix matters: the glTF specification reserves unprefixed names for its own attributes, and tools are allowed to drop what they don't recognise.
 
-<!-- TODO Thomas: short snippet from svf-utils showing where _ID is written, and how the viewer reads it back for hover/selection. -->
+{{< ascii kind="ids" caption="Every vertex carries its object's `dbId` as `_ID`. On hover the viewer reads `_ID` back and selects the matching object." >}}
 
 One early mistake was writing the id into `COLOR_0`. It worked, until a tool further down the pipeline treated it as a colour.
 
@@ -48,7 +47,7 @@ So material names pass through untouched, and we added a guard to the pipeline t
 
 CAD models come in millimetres, inches, metres, and sometimes with no unit at all. SVF carries a distance unit in its metadata.
 
-<!-- TODO Thomas: name the exact file/field the distance unit is read from. -->
+{{< ascii kind="units" caption="Read the unit and convert once to metres. Millimetres and inches end up the same size; a model without a unit stays dimensionless." >}}
 
 Our first renderer tried to be helpful. If a model looked about a thousand times too big, it assumed millimetres and scaled it down. That heuristic was right most of the time, which is the worst kind of wrong.
 
@@ -71,5 +70,3 @@ Rules like these erode unless a test holds them in place. Two things helped:
 * Carry the `dbId` across in a custom, underscore-prefixed attribute.
 * Read the unit, convert once, and never guess.
 * Lock the behaviour in with regression tests on real models before you refactor.
-
-<!-- TODO Thomas: check with Elfsquad that the pipeline details above are fine to publish, then remove `draft = true`. -->

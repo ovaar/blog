@@ -1,6 +1,7 @@
 +++
 date = "2022-02-22"
-title = "How a smart mirror project finished after years of work"
+title = "How I finally finished my DIY smart mirror"
+description = "Building a smart mirror from scratch: wooden frame, spy-mirror film, a Vue.js dashboard, mounting, a bill of materials and what I'd do differently."
 type = "post"
 categories = ["Development"]
 tags = ["vuejs", "DIY"]
@@ -18,9 +19,9 @@ My first thoughts were to put the mirror in the bathroom, because this is where 
 
 I imagined the mirrors' frame to be build out of wood where the display would sink into the frame. This allows the glass to cover the entire front acting as a mirror. For the semi-transparent mirror look I choose to use a spy-mirror film over acrylic class, since it was much cheaper. A Raspberry Pi mounted at the back of the frame would run Mirrorm8 and control the display. 
 
-# Development phase
+## Development phase
 
-After preparing drawings and double-checking the measurements I got help from a friendly neighbour, who had all the professional tools, to cut wood. I soft grinded the wood for a smooth finish and applied [Polyvine verniswas](https://www.polyvine.be/) to darken the wood, which gives the old-wood-looks.
+After preparing drawings and double-checking the measurements I got help from a friendly neighbour, who had all the professional tools, to cut wood. I soft grinded the wood for a smooth finish and applied Polyvine verniswas to darken the wood, which gives the old-wood-looks.
 
 While I was shopping at a hardware store I found these thin metal interlocking connectors, which are great to mount the mirror close on to the wall. Normally, such brackets are used to mount regular mirrors on the wall. To be able to use them for my mirror I drilled some holes through the brackets and mounted them at the back of the wooden frame with some philips screws.
 
@@ -38,11 +39,11 @@ At the time Nuxt.js just recently introduced support for TypeScript, but it was 
 
 Just around the summer of August 2020, in my holidays, Nuxt.js released a stable version of @nuxt/typescript-runtime v1.0.0, allowing me to succesfully build the Mirrorm8 project with the desired serverMiddleware [b019c94](https://github.com/ovaar/mirrorm8/commit/b019c94de2d44afebc33e372c523a3f1f6592fdd). Finally! I rapidly finished automatically updating the weather forecast, upcoming Google Calendar items, date time and turning on/off the display dynamically using the RCWL-0516 proximity sensor afterwards.
 
-# Validation phase
+## Validation phase
 
 Most of the developement could be done on a regular working station, but because of the Proximity sensor few functions needed to be tested on the hardware. Because mirrorm8 uses native dependencies it was easiest to be build the project on the target itself. The iterations were slow, because each time building the project took about 15 minutes. Luckly all of these steps I automated. At boot DietPi automatically starts the mirrorm8 systemd service and loads the URL with Chromium in kiosk mode. Unfortunately, my calendar items were not showing when running Mirrorm8 on the Raspberri Pi. Though, this worked just find on my work station. It turns out that Google OAuth2 is unsupported in the open-source [Chromium](https://www.chromium.org/) browser. To fix it I replaced Google OAuth2 with a [Google API key](https://docs.simplecalendar.io/google-api-key/) instead.
 
-#### Gallery
+### Gallery
 
 {{< img src="/img/IMG_20190609_171025.jpg" alt="Mirrorm8 - Wooden frame pieces" >}}
 {{< img src="/img/IMG_20190610_113928.jpg" alt="Mirrorm8 - Wooden frame assembled front" >}}
@@ -51,7 +52,7 @@ Most of the developement could be done on a regular working station, but because
 {{< img src="/img/IMG_20200720_190254.jpg" alt="Mirrorm8 - Chromium restore pages" >}}
 {{< img src="/img/IMG_20211228_141034.jpg" alt="Mirrorm8 - Fully assembled " >}}
 
-#### Bill of material
+### Bill of material
 
 
 | Items                     |    Cost |
