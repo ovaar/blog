@@ -1,0 +1,35 @@
+# Ovaar
+
+> Software engineering blog by Thomas Reynders, a software engineer in Leeuwarden (NL) who leads 3D product configurator work at Elfsquad. Posts are first-hand notes on C++ and Conan, Python tooling, CI pipelines, embedded Linux, 3D on the web and working with coding agents.
+
+All content is licensed CC BY-NC 4.0. Full post text is also available in the RSS feed: https://ovaar.github.io/index.xml
+
+## About
+
+- [About Thomas Reynders](https://ovaar.github.io/about/): background, current work and links
+
+## C++ and Conan
+
+- [Conan 2.x migration and the lessons learned](https://ovaar.github.io/blog/conan-2x-migration-lessons-learned/)
+- [Build macOS Universal Binaries with Conan and CMake](https://ovaar.github.io/blog/how-to-build-macos-universal-binaries-with-conan-and-cmake/)
+- [Why std::expected matters for error handling](https://ovaar.github.io/blog/cpp-std-expected-and-std-error-code/)
+- [Practical C++17 highlights by example](https://ovaar.github.io/blog/practical-cppstd17/)
+- [std::variant: build an array of all alternatives](https://ovaar.github.io/blog/cpp-make-variant-alternatives-array/)
+
+## Python and CI
+
+- [Running Python cross-platform in Azure Pipelines](https://ovaar.github.io/blog/azure-pipelines-cross-platform-python-scripting/)
+- [Cross-platform Bash scripts in Azure Pipelines](https://ovaar.github.io/blog/azure-pipelines-cross-platform-scripts/)
+- [Fix the ctypes _type_ error on Azure Pipelines](https://ovaar.github.io/blog/azure-pipelines-python-ctypes-importerror/)
+- [GitHub Actions: deploy Hugo to a Pages submodule](https://ovaar.github.io/blog/github-actions-deploy-with-permissions/)
+- [Typed Python CLI arguments with argparse and StrEnum](https://ovaar.github.io/blog/how-to-typed-command-line-arguments-in-python/)
+- [Run a Python function by name from the command line](https://ovaar.github.io/blog/how-to-call-function-of-file-in-python/)
+- [Reactive testing with Gherkin, ReactiveX and asyncio](https://ovaar.github.io/blog/reactive-testing-with-gherkin-reactivex-and-asyncio/)
+- [Secure Docker login credentials with pass on Linux](https://ovaar.github.io/blog/how-to-setup-docker-credential-store/)
+
+## Embedded Linux and other
+
+- [Set a Linux MAC address from EEPROM](https://ovaar.github.io/blog/how-to-set-linux-mac-address/)
+- [An interactive Yocto shell for device provisioning](https://ovaar.github.io/blog/how-to-create-an-interactive-yocto-shell/)
+- [C# Performance - Profiling introduction](https://ovaar.github.io/blog/csharp-performance-profiling-introduction/)
+- [How I finally finished my DIY smart mirror](https://ovaar.github.io/blog/how-a-smart-mirror-project-finished-after-years/)

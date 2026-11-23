@@ -5,6 +5,8 @@ theme = "ovaarian"
 
 enableEmoji=true
 enableRobotsTXT = true
+# Lastmod (sitemap, dateModified) comes from the last git commit touching the file.
+enableGitInfo = true
 
 [taxonomies]
    tag = "tags"
@@ -16,7 +18,8 @@ enableRobotsTXT = true
 
 [params]
     Author = "Ovaar"
-    Description = "Software Engineering blog"
+    Description = "Software engineering notes by Thomas Reynders on C++ and Conan, Python tooling, CI pipelines, 3D on the web and working with coding agents."
+    ogImage = "og-default.png"
     FullName = "Thomas Reynders"
     Headline = "Notes on building software."
     Motto = "Build. Measure. Improve."

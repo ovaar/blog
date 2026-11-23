@@ -1,16 +1,43 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  {{ if .Params.NoIndex }}<meta name="robots" content="noindex" />{{ end }}
-  <meta name="author" content="{{ .Site.Params.Author }}" />
-  {{- $desc := or .Params.description .Params.tagline .Site.Params.Description }}
+  {{- /* noindex: explicit opt-out, the 404 page, and taxonomy terms too thin to be useful landing pages. */}}
+  {{- $noindex := or .Params.NoIndex (eq .Kind "404") (and (eq .Kind "term") (lt (len .Pages) 3)) }}
+  {{ if $noindex }}<meta name="robots" content="noindex, follow" />{{ end }}
+  <meta name="author" content="{{ .Site.Params.FullName | default .Site.Params.Author }}" />
+  {{- $desc := or .Params.description .Params.tagline }}
+  {{- if and (not $desc) .IsPage }}{{ $desc = .Summary | plainify | htmlUnescape | strings.TrimSpace | truncate 155 }}{{ end }}
+  {{- if and (not $desc) (eq .Kind "term") }}{{ $desc = printf "%s posts (%s) on the Ovaar software engineering blog by Thomas Reynders." .Title (cond (eq .Data.Plural "tags") "tag" "category") }}{{ end }}
+  {{- if and (not $desc) (eq .Kind "taxonomy") }}{{ $desc = printf "All %s used on the Ovaar software engineering blog by Thomas Reynders." .Data.Plural }}{{ end }}
+  {{- $desc = or $desc .Site.Params.Description }}
+  {{- $title := cond .IsHome .Site.Title .Title }}
+  {{- $image := absURL (or .Params.image .Site.Params.ogImage) }}
+  {{- $isPost := and .IsPage (eq .Type "post") }}
   <meta name="description" content="{{ $desc }}" />
   <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} · {{ .Site.Params.Author }}{{ end }}</title>
-  <meta property="og:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }}{{ end }}" />
+  <link rel="canonical" href="{{ .Permalink }}" />
+  <meta property="og:site_name" content="{{ .Site.Params.Author }}" />
+  <meta property="og:title" content="{{ $title }}" />
   <meta property="og:description" content="{{ $desc }}" />
   <meta property="og:url" content="{{ .Permalink }}" />
-  <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}" />
-  <link rel="canonical" href="{{ .Permalink }}" />
+  <meta property="og:type" content="{{ cond $isPost "article" (cond (eq .RelPermalink "/about/") "profile" "website") }}" />
+  <meta property="og:locale" content="en_US" />
+  <meta property="og:image" content="{{ $image }}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
+  <meta property="og:image:alt" content="{{ $title }}" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{ $title }}" />
+  <meta name="twitter:description" content="{{ $desc }}" />
+  <meta name="twitter:image" content="{{ $image }}" />
+  {{- if $isPost }}
+  <meta property="article:published_time" content="{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}" />
+  <meta property="article:modified_time" content="{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}" />
+  <meta property="article:author" content="{{ absURL "about/" }}" />
+  {{- range .Params.tags }}
+  <meta property="article:tag" content="{{ . }}" />
+  {{- end }}
+  {{- end }}
   <meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)" />
   <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)" />
   <script>
@@ -25,10 +52,15 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..500&display=swap" />
+  {{- /* Load the web fonts without blocking first render; font-display=swap shows fallback text meanwhile. */}}
+  {{- $fonts := "https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..500&display=swap" }}
+  <link rel="preload" as="style" href="{{ $fonts }}" />
+  <link rel="stylesheet" href="{{ $fonts }}" media="print" onload="this.media='all'" />
+  <noscript><link rel="stylesheet" href="{{ $fonts }}" /></noscript>
   {{ $css := slice (resources.Get "main.css") (resources.Get "syntax.css") | resources.Concat "css/site.css" | minify | fingerprint }}
   <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}" />
   {{ with .OutputFormats.Get "RSS" }}<link rel="alternate" type="application/rss+xml" href="{{ .RelPermalink }}" title="{{ $.Site.Title }}" />{{ end }}
   {{ $js := slice (resources.Get "theme.js") (resources.Get "ascii.js") | resources.Concat "js/site.js" | minify | fingerprint }}
   <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
+  {{- partial "schema.html" . }}
 </head>
