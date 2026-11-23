@@ -1,6 +1,5 @@
 +++
 date = "2026-11-23"
-draft = true
 title = "A lint ratchet: from 97 useEffects to 2 in a week"
 description = "How a custom lint rule plus a shrink-only exceptions list took a React codebase from 97 effects in components to 2, and why most of them were deleted rather than moved."
 type = "post"

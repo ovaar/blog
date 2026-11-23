@@ -1,6 +1,5 @@
 +++
 date = "2026-11-23"
-draft = true
 title = "A robot that clicks around staging every night"
 description = "A seeded random walk in Playwright that checks every screen for crashes, server errors and leaked translation keys, cannot write tenant data, and found a WebGL viewer leak on its second night."
 type = "post"

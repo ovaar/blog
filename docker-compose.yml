@@ -18,3 +18,15 @@ services:
       - ~/hugo_cache:/cache
     ports:
       - 1313:1313
+
+  # Like `server`, but also renders posts with `draft = true`. Uses the same port as `server`, so run one at a time.
+  # Git info is off so it also runs from a git worktree, whose .git points outside the mount.
+  drafts:
+    image: ghcr.io/gohugoio/hugo:v0.170.1
+    command: serve --port 1313 --bind 0.0.0.0 --disableFastRender --noTimes --buildDrafts --buildFuture --enableGitInfo=false
+    volumes:
+      - ./:/project
+      - ~/hugo_cache:/cache
+    ports:
+      - 1313:1313
+    profiles: [drafts]

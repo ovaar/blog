@@ -1,6 +1,5 @@
 +++
 date = "2026-11-23"
-draft = true
 title = "Property-based tests found two bugs our example tests never would"
 description = "Adding fast-check to a React frontend: a saved cart where \"abc\" counted as 3 items, a translation key named valueOf that crashed the app, and a model test that runs 2000 cart sequences in a quarter of a second."
 type = "post"
