@@ -1,28 +1,34 @@
 <head>
   <meta charset="utf-8" />
-  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   {{ if .Params.NoIndex }}<meta name="robots" content="noindex" />{{ end }}
   <meta name="author" content="{{ .Site.Params.Author }}" />
-  {{ if .Params.Tagline }}
-  <meta name="description" content="{{ .Params.Tagline }}" />
-  {{ else }}
-  <meta name="description" content="{{ .Site.Params.Description }}" />
-  {{ end }}
-  <title>
-    {{ if .IsHome }}
-      {{ .Site.Title }}
-    {{ else }}
-      {{ .Title }} - {{ .Site.Title }}
-    {{ end }}
-  </title>
-  {{ $mvp := resources.Get "mvp.css" }} 
-  {{ $custom := resources.Get "custom.css" }}
-  {{ $syntax := resources.Get "syntax.css" }}
-  {{ $themeToggle := resources.Get "theme-toggle.css" }}
-  {{ $css := slice $mvp $custom $syntax $themeToggle | resources.Concat "css/stylesheet.css" | minify }}
-  <link rel="stylesheet" href="{{ $css.RelPermalink }}" />
-  <link href="{{ with .OutputFormats.Get "RSS" }}{{ .RelPermalink }}{{ end }}" rel="feed" type="application/rss+xml" title="{{ .Site.Title }}">
-  {{ $themeJs := resources.Get "theme-toggle.js" | minify }}
-  <script src="{{ $themeJs.RelPermalink }}"></script>
+  {{- $desc := or .Params.description .Params.tagline .Site.Params.Description }}
+  <meta name="description" content="{{ $desc }}" />
+  <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} · {{ .Site.Params.Author }}{{ end }}</title>
+  <meta property="og:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }}{{ end }}" />
+  <meta property="og:description" content="{{ $desc }}" />
+  <meta property="og:url" content="{{ .Permalink }}" />
+  <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}" />
+  <link rel="canonical" href="{{ .Permalink }}" />
+  <meta name="theme-color" content="#f7f7f5" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#111110" media="(prefers-color-scheme: dark)" />
+  <script>
+    (function () {
+      var t = null;
+      try { t = localStorage.getItem('theme'); } catch (e) {}
+      if (t !== 'light' && t !== 'dark') {
+        t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+      }
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Newsreader:ital,opsz,wght@0,6..72,400..600;1,6..72,400..500&display=swap" />
+  {{ $css := slice (resources.Get "main.css") (resources.Get "syntax.css") | resources.Concat "css/site.css" | minify | fingerprint }}
+  <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}" />
+  {{ with .OutputFormats.Get "RSS" }}<link rel="alternate" type="application/rss+xml" href="{{ .RelPermalink }}" title="{{ $.Site.Title }}" />{{ end }}
+  {{ $js := slice (resources.Get "theme.js") (resources.Get "ascii.js") | resources.Concat "js/site.js" | minify | fingerprint }}
+  <script src="{{ $js.RelPermalink }}" integrity="{{ $js.Data.Integrity }}" defer></script>
 </head>

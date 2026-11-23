@@ -1,19 +1,19 @@
-<footer>
-  <hr />
-  <div class="footer-content">
-    <div class="footer-info">
-      {{ if .Site.Copyright }}
-      <p><small>Copyright &#169; {{ .Site.Copyright }}</small></p>
-      <p>
-        <small
-          >created with <a href="https://gohugo.io">Hugo</a>,
-          <a href="https://github.com/andybrewer/mvp">mvp.css</a>.
-        </small>
-      </p>
-      {{ end }}
+<footer class="site-foot">
+  <div class="page">
+    <div>
+      <div class="foot-brand">
+        <a class="wordmark" href="{{ "" | relURL }}">{{ upper .Site.Params.Author }}</a>
+        {{ with .Site.Params.Motto }}<p>{{ . }}</p>{{ end }}
+      </div>
+      <nav class="foot-nav" aria-label="Footer">
+        <a href="{{ "blog/" | relURL }}">Blog</a>
+        <a href="{{ "experiments/" | relURL }}">Experiments</a>
+        {{- range .Site.Menus.main }}
+        <a href="{{ .URL }}">{{ .Name }}</a>
+        {{- end }}
+      </nav>
+      {{ partial "social.html" . }}
     </div>
-    <div class="footer-social">
-      {{- partial "social.html" . -}}
-    </div>
+    <small>© {{ now.Year }} {{ .Site.Params.FullName | default .Site.Params.Author }}. Writing licensed under <a href="https://creativecommons.org/licenses/by-nc/4.0/">CC BY-NC 4.0</a>.</small>
   </div>
 </footer>

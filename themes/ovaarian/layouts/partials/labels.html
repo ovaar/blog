@@ -1,0 +1,3 @@
+{{- /* Uppercase category line: categories, falling back to tags. */ -}}
+{{- $items := .Params.categories | default .Params.tags | default (slice "Notes") }}
+{{- range $i, $c := first 2 $items }}{{ if $i }}<span class="sep">·</span>{{ end }}{{ $c }}{{ end -}}

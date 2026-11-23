@@ -1,0 +1,6 @@
+{{- /* Generative panel. Expects dict "page" and "size" (card | hero | tile), optional "kind". */ -}}
+{{- $kind := .kind | default (partial "art-kind.html" .page) }}
+<div class="art art--{{ .size }}" aria-hidden="true">
+  <canvas data-ascii="{{ $kind }}" data-seed="{{ with .page }}{{ .Title }}{{ end }}" data-cell="{{ if eq .size "hero" }}13{{ else }}11{{ end }}"></canvas>
+  <span class="art-label">fig. {{ $kind }}</span>
+</div>

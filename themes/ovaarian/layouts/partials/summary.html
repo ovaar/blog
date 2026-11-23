@@ -1,0 +1,12 @@
+{{- /* One-paragraph teaser: front matter first, otherwise the opening of the post. */ -}}
+{{- with or .Params.summary .Params.description .Params.tagline -}}
+  {{- . -}}
+{{- else -}}
+  {{- $c := .Content -}}
+  {{- $c = replaceRE `(?s)^\s*<h1[^>]*>.*?</h1>` "" $c 1 -}}
+  {{- $c = replaceRE `(?s)<nav.*?</nav>` "" $c -}}
+  {{- $c = replaceRE `(?s)<pre.*?</pre>` "" $c -}}
+  {{- $c = replaceRE `(?s)<h[1-6][^>]*>.*?</h[1-6]>` "" $c -}}
+  {{- $c = replaceRE `(?s)<li.*?</li>` "" $c -}}
+  {{- $c | plainify | htmlUnescape | replaceRE `\s+` " " | strings.TrimSpace | truncate 190 "…" -}}
+{{- end -}}

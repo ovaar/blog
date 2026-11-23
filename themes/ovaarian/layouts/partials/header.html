@@ -1,43 +1,20 @@
-<nav>
-  {{ if not .IsHome }}
-  <a href="{{ "" | absURL }}">{{ .Site.Title }}</a>
-  {{ else }}
-  <a></a>
-  {{ end }}
-  <ul>
-    <li>
-      <a href="{{ "" | absURL }}">Home</a>
-    </li>
-    <li>
-      <a href="{{ "blog/" | absURL }}">Blog</a>
-    </li>
-    <li>
-      <a href="/tags">Tags</a>
-    </li>
-	{{ range $i, $item := .Site.Menus.main }}
-  	<li>
-	  <a href="{{ .URL }}">{{ .Name }}</a>
-	</li>
-  	{{ end }}
-    <li>
-      <button id="theme-toggle" class="theme-toggle" aria-label="Toggle theme mode">
-        <!-- Sun icon for light mode -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="light-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="5"></circle>
-          <line x1="12" y1="1" x2="12" y2="3"></line>
-          <line x1="12" y1="21" x2="12" y2="23"></line>
-          <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-          <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-          <line x1="1" y1="12" x2="3" y2="12"></line>
-          <line x1="21" y1="12" x2="23" y2="12"></line>
-          <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-          <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-        </svg>
-        <!-- Moon icon for dark mode -->
-        <svg xmlns="http://www.w3.org/2000/svg" class="dark-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-        </svg>
-      </button>
-    </li>
-  </ul>
-</nav>
+<header class="site-head">
+  <div class="page">
+    <a class="wordmark" href="{{ "" | relURL }}" aria-label="{{ .Site.Params.Author }} home">{{ upper .Site.Params.Author }}</a>
+    <nav class="site-nav" id="site-nav" aria-label="Main">
+      {{- $section := .Section }}
+      <a href="{{ "blog/" | relURL }}"{{ if or (eq $section "blog") (eq .Type "post") (eq .Data.Plural "tags") }} aria-current="page"{{ end }}>Blog</a>
+      <a href="{{ "experiments/" | relURL }}"{{ if eq $section "experiments" }} aria-current="page"{{ end }}>Experiments</a>
+      {{- $current := . }}
+      {{- range .Site.Menus.main }}
+      <a href="{{ .URL }}"{{ if $current.IsMenuCurrent "main" . }} aria-current="page"{{ end }}>{{ .Name }}</a>
+      {{- end }}
+    </nav>
+    <div class="head-tools">
+      {{ with .Site.Params.Social.github }}<a class="icon-btn" href="{{ . }}" rel="me noopener" aria-label="GitHub">{{ partial "icon.html" "github" }}</a>{{ end }}
+      {{ with .Site.Home.OutputFormats.Get "RSS" }}<a class="icon-btn" href="{{ .RelPermalink }}" aria-label="RSS feed">{{ partial "icon.html" "rss" }}</a>{{ end }}
+      <button id="theme-toggle" class="icon-btn theme-toggle" type="button" aria-label="Dark mode">{{ partial "icon.html" "sun" }}{{ partial "icon.html" "moon" }}</button>
+      <button id="menu-toggle" class="icon-btn menu-toggle" type="button" aria-label="Menu" aria-expanded="false" aria-controls="site-nav">{{ partial "icon.html" "menu" }}</button>
+    </div>
+  </div>
+</header>

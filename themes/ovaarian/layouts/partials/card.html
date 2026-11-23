@@ -1,0 +1,7 @@
+<li class="card">
+  {{ partial "art.html" (dict "page" . "size" "card") }}
+  <p class="label">{{ partial "labels.html" . }}</p>
+  <h3><a href="{{ .RelPermalink }}">{{ .Title }}</a></h3>
+  <p>{{ partial "summary.html" . | truncate 150 "…" }}</p>
+  <span class="arrow-link" aria-hidden="true">Read more<span>→</span></span>
+</li>

@@ -1,48 +1,44 @@
 {{ define "main" }}
-  <section class="home">
-    <header>
-      <h1>{{ .Site.Params.Author }}</h1>
-      <p>{{ .Site.Params.Description }}</p>
-    </header>
-    <div class="layout-two-column">
-      <div class="main-content">
-        {{ $posts := first 5 (where .Site.RegularPages "Section" "blog") }}
-        {{ range $index, $post := $posts }}
-          <article class="home-post">
-            <a href="{{ .Permalink }}"><h3>{{ .Title }}</h3></a>
-            <p class="post-summary">
-              {{ if .Params.summary }}
-                {{ .Params.summary }}
-              {{ else }}
-                {{ $content := .Content }}
-                {{ $content := replaceRE `(?s)^(\s*<[uo]l>\s*<li>.*?</[uo]l>)` "" $content 1 }}
-                {{ $content := replaceRE `(?s)^(\s*-\s*\[.*?\]\(#.*?\).*\n)+` "" $content 1 }}
-                {{ $content := replaceRE `(?s)^(\s*\d+\.\s*\[.*?\]\(#.*?\).*\n)+` "" $content 1 }}
-                {{ $content := replaceRE `(?s)<nav.*?</nav>` "" $content }}
-                {{ $content := replaceRE `(?s)<table of contents.*?</table>` "" $content }}
-                {{ $clean := $content | plainify | replaceRE `\s+` " " | strings.TrimPrefix " " }}
-                {{ $trimmedContent := $clean | truncate 300 "..." }}
-                {{ $trimmedContent }}
-              {{ end }}
-            </p>
-            <div class="post-meta">
-              <small>Published on {{ .Date.Format "Mon, 02 Jan 2006" }}</small>
-              {{- partial "tags.html" . -}}
-            </div>
-          </article>
-          {{ if ne (add $index 1) (len $posts) }}<hr />{{ end }}
-        {{ end }}
-      </div>
-      <aside class="sidebar">
-        <section class="tag-cloud">
-          <h3>Browse by Tags</h3>
-          <div class="tags">
-            {{ range $name, $taxonomy := .Site.Taxonomies.tags }}
-              <a href="{{ "tags/" | absURL }}{{ $name | urlize }}" class="tag">#{{ $name }} ({{ $taxonomy.Count }})</a>
-            {{ end }}
-          </div>
-        </section>
-      </aside>
+{{- $posts := (where .Site.RegularPages "Type" "post").ByDate.Reverse }}
+<div class="page">
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="hero__text">
+      <p class="eyebrow">{{ with .Site.Params.FullName }}{{ . }}<span class="sep">·</span>{{ end }}{{ .Site.Params.Description }}</p>
+      <h1 id="hero-title">{{ .Site.Params.Headline | default .Site.Title }}</h1>
+      {{ with .Site.Params.Intro }}<p class="hero__lede">{{ . | markdownify }}</p>{{ end }}
+      <a class="button" href="{{ "blog/" | relURL }}">Explore the blog <span aria-hidden="true">→</span></a>
+    </div>
+    <div class="hero__art" aria-hidden="true"><canvas data-ascii="sphere" data-cell="10" data-seed="ovaar"></canvas></div>
+  </section>
+
+  <section aria-labelledby="latest">
+    <div class="section-head">
+      <h2 id="latest">Latest articles</h2>
+      <a class="arrow-link" href="{{ "blog/" | relURL }}">View all<span aria-hidden="true">→</span></a>
+    </div>
+    <ul class="cards">
+      {{- range first 3 $posts }}{{ partial "card.html" . }}{{ end }}
+    </ul>
+  </section>
+
+  <section aria-labelledby="archive">
+    <div class="section-head">
+      <h2 id="archive">Archive</h2>
+      <span class="label">{{ len $posts }} posts</span>
+    </div>
+    {{ partial "post-list.html" (after 3 $posts) }}
+  </section>
+
+  <section aria-labelledby="topics">
+    <div class="section-head">
+      <h2 id="topics">Topics</h2>
+      <a class="arrow-link" href="{{ "tags/" | relURL }}">All topics<span aria-hidden="true">→</span></a>
+    </div>
+    <div class="tags topic-cloud">
+      {{- range .Site.Taxonomies.tags.ByCount }}
+      <a class="tag" href="{{ .Page.RelPermalink }}">{{ .Term }}<sup>{{ .Count }}</sup></a>
+      {{- end }}
     </div>
   </section>
+</div>
 {{ end }}
