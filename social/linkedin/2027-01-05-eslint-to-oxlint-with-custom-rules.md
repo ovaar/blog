@@ -2,7 +2,7 @@
 linkedin = "2027-01-05T08:30:00+01:00"
 blog = "2027-01-05T07:00:00+01:00"
 url = "https://ovaar.github.io/blog/eslint-to-oxlint-with-custom-rules/"
-status = "review"
+status = "scheduled"
 image = "2027-01-05-eslint-to-oxlint-with-custom-rules.png"
 +++
 

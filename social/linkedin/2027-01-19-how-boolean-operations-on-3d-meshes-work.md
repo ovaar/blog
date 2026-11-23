@@ -2,7 +2,7 @@
 linkedin = "2027-01-19T08:30:00+01:00"
 blog = "2027-01-19T07:00:00+01:00"
 url = "https://ovaar.github.io/blog/how-boolean-operations-on-3d-meshes-work/"
-status = "review"
+status = "scheduled"
 image = "2027-01-19-how-boolean-operations-on-3d-meshes-work.png"
 +++
 

@@ -47,8 +47,9 @@ New posts go out one a week, on Tuesday at 07:00 CET, with a LinkedIn post at 08
 
 1. Give the post its publish date with a time: `date = "2026-12-01T07:00:00+01:00"`. Hugo leaves
    a post with a future date out of the build, so it stays offline until then.
-2. Save the LinkedIn text as `social/linkedin/<date>-<slug>.md`. Hugo only reads `content/`, so
-   these files are never published.
+2. Save the LinkedIn text and its 1200 x 1500 image as `social/linkedin/<date>-<slug>.md` and
+   `.png`, and schedule it on LinkedIn. The `linkedin` skill (`.claude/skills/linkedin/`) has the
+   steps. Hugo only reads `content/`, so these files are never published.
 3. Merge to `master`. The deploy also runs every Tuesday at 06:00 UTC and publishes the posts
    whose date has passed.
 

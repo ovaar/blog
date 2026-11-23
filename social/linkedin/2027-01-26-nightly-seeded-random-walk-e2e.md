@@ -2,7 +2,7 @@
 linkedin = "2027-01-26T08:30:00+01:00"
 blog = "2027-01-26T07:00:00+01:00"
 url = "https://ovaar.github.io/blog/nightly-seeded-random-walk-e2e/"
-status = "review"
+status = "scheduled"
 image = "2027-01-26-nightly-seeded-random-walk-e2e.png"
 +++
 

@@ -2,7 +2,7 @@
 linkedin = "2026-11-24T08:30:00+01:00"
 blog = "none, the post is about the blog theme"
 url = "https://ovaar.github.io/"
-status = "review"
+status = "scheduled"
 image = "2026-11-24-blog-theme.png"
 +++
 

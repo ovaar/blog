@@ -2,7 +2,7 @@
 linkedin = "2026-12-08T08:30:00+01:00"
 blog = "2026-12-08T07:00:00+01:00"
 url = "https://ovaar.github.io/blog/lint-ratchet-useeffect/"
-status = "review"
+status = "scheduled"
 image = "2026-12-08-lint-ratchet-useeffect.png"
 +++
 

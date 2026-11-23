@@ -2,7 +2,7 @@
 linkedin = "2026-12-01T08:30:00+01:00"
 blog = "2026-12-01T07:00:00+01:00"
 url = "https://ovaar.github.io/blog/six-months-of-agentic-coding-what-actually-changed/"
-status = "review"
+status = "scheduled"
 image = "2026-12-01-six-months-of-agentic-coding-what-actually-changed.png"
 +++
 

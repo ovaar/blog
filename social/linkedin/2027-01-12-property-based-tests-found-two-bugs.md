@@ -2,7 +2,7 @@
 linkedin = "2027-01-12T08:30:00+01:00"
 blog = "2027-01-12T07:00:00+01:00"
 url = "https://ovaar.github.io/blog/property-based-tests-found-two-bugs/"
-status = "review"
+status = "scheduled"
 image = "2027-01-12-property-based-tests-found-two-bugs.png"
 +++
 

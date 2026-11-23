@@ -2,7 +2,7 @@
 linkedin = "2027-02-02T08:30:00+01:00"
 blog = "2027-02-02T07:00:00+01:00"
 url = "https://ovaar.github.io/blog/csharp-performance-allocations/"
-status = "review"
+status = "scheduled"
 image = "2027-02-02-csharp-performance-allocations.png"
 +++
 
