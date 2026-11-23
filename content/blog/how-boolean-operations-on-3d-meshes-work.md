@@ -1,5 +1,5 @@
 +++
-date = "2026-11-23"
+date = "2027-01-19T07:00:00+01:00"
 title = "How boolean operations on 3D meshes work"
 description = "Union, intersection and difference of 3D solids, explained with interactive figures: the one-line version for distance fields, the four steps a mesh boolean takes, the BSP trick from csg.js, and why floating point makes all of it hard."
 type = "post"
