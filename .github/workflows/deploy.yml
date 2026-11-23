@@ -51,8 +51,7 @@ jobs:
             blog \
               --gc \
               --minify \
-              --noTimes \
-              --baseURL "${{ steps.pages.outputs.base_url }}/"
+              --noTimes
 
           cd public
           git add .
